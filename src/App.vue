@@ -218,21 +218,20 @@ const sandboxStyle = computed((): CSSProperties => {
   return { height: "100%" };
 });
 
+// 個別要素のCSSコードを生成するcomputed
 const generatedIndividualCss = computed(() => {
-  const selectedElement = elements.value.find(
-    (b) => b.id === selectedElementId.value
-  );
-  if (!selectedElement) return "/* 要素をクリックして選択してください */";
-  const { id, width, height, x, y, angle, zIndex } = selectedElement;
+  const el = elements.value.find(e => e.id === selectedElementId.value);
+  if (!el) return "/* 要素をクリックして選択してください */";
+  const { id, width, height, x, y, angle, zIndex, backgroundColor } = el;
+  // 背景色を含めるように追加
   const code = `
 #${id} {
-    position: absolute; 
+    position: absolute;
     width: ${width.toFixed(1)}px;
     height: ${height.toFixed(1)}px;
+    background-color: ${backgroundColor || "#fff"};
     z-index: ${zIndex};
-    transform: translate(${x.toFixed(1)}px, ${y.toFixed(
-    1
-  )}px) rotate(${angle.toFixed(1)}deg);
+    transform: translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${angle.toFixed(1)}deg);
 }`;
   return code.trim().replace(/^ {4}/gm, "    ");
 });
