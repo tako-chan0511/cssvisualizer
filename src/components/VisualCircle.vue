@@ -1,9 +1,9 @@
 <template>
   <div
     :id="state.id"
-    class="visual-element box"
+    class="visual-element circle"
     :class="{ selected: isSelected }"
-    :style="elementStyle"
+    :style="circleStyle"
   >
     {{ state.content }}
     <div v-if="isSelected && !isLayoutMode" class="rotate-handle"></div>
@@ -20,20 +20,16 @@ const props = defineProps<{
   isLayoutMode: boolean;
 }>();
 
-// このコンポーネントはイベントを発行しないため、emitの定義は不要です。
-// すべての操作は親のApp.vueがinteract.jsを通じて直接DOMを監視します。
-
-// isLayoutModeプロパティに応じて、適用するスタイルを動的に切り替えます。
-const elementStyle = computed((): CSSProperties => {
+const circleStyle = computed((): CSSProperties => {
     if (props.isLayoutMode) {
-        // レイアウトモードでは、Flexboxの子アイテムとして振る舞います。
-        // positionやtransformは不要です。
+        // レイアウトモードでは、Flexboxアイテムとしてのスタイルを適用
         return {
             width: `${props.state.width}px`,
-            height: `${props.state.height}px`,
+            height: `${props.state.height}px`, // 円なので幅と高さを同じにする
+            position: 'relative', 
         };
     } else {
-        // 個別編集モードでは、絶対配置で座標を指定します。
+        // 個別編集モードでは、絶対配置でスタイルを適用
         return {
             width: `${props.state.width}px`,
             height: `${props.state.height}px`,
@@ -48,7 +44,7 @@ const elementStyle = computed((): CSSProperties => {
 </script>
 
 <style scoped>
-/* 共通のクラス名 .visual-element を持つようにします */
+/* visual-elementクラスは、App.vueでinteract.jsの対象とするために共通で付与 */
 .visual-element {
     display: flex;
     justify-content: center;
@@ -71,12 +67,12 @@ const elementStyle = computed((): CSSProperties => {
     z-index: 100 !important;
 }
 
-/* ボックス固有のスタイル */
-.box {
-    background: linear-gradient(135deg, #6dd5ed, #2193b0);
+/* 円固有のスタイル */
+.circle {
+    background: linear-gradient(135deg, #ff8c42, #ff3d00);
     color: white;
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(33, 147, 176, 0.4);
+    border-radius: 50%; /* ★★★ これが円にするための重要なスタイル ★★★ */
+    box-shadow: 0 5px 15px rgba(255, 61, 0, 0.4);
 }
 
 .rotate-handle {
