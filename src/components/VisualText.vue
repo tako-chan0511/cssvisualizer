@@ -4,12 +4,14 @@
     class="visual-element text"
     :class="{ selected: isSelected }"
     :style="elementStyle"
+    @dblclick="enableEditing"
   >
-    <!-- contenteditable属性で直接テキスト編集を可能にする -->
-    <p 
-      :contenteditable="!isLayoutMode" 
+    <p
+      ref="textContentRef"
+      :contenteditable="isEditing"
       @input="updateContent"
       @blur="onBlur"
+      @keydown.esc.stop="disableEditing"
       class="text-content"
     >
       {{ state.content }}
@@ -19,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, type CSSProperties, watch } from 'vue';
+import { computed, ref, type CSSProperties, watch, nextTick } from 'vue';
 import type { ElementState } from '../types';
 
 const props = defineProps<{
@@ -32,10 +34,11 @@ const emit = defineEmits<{
   (e: 'update', state: ElementState): void;
 }>();
 
+// ★★★ 追加: テキスト編集モードの状態管理 ★★★
+const isEditing = ref(false);
+const textContentRef = ref<HTMLParagraphElement | null>(null);
 
 const elementStyle = computed((): CSSProperties => {
-    // テキスト要素はtransformを使わず、width/heightも自動に任せる方が自然な場合が多い
-    // ここでは他の要素と統一感を出すために、同様のスタイルを適用します。
     if (props.isLayoutMode) {
         return {
             position: 'relative',
@@ -53,6 +56,29 @@ const elementStyle = computed((): CSSProperties => {
     }
 });
 
+// ★★★ 追加: ダブルクリックで編集モードを開始する関数 ★★★
+const enableEditing = () => {
+    if (props.isLayoutMode) return;
+    isEditing.value = true;
+    // DOMが更新された後にフォーカスを当て、カーソルを末尾に移動
+    nextTick(() => {
+        if (textContentRef.value) {
+            textContentRef.value.focus();
+            const range = document.createRange();
+            const sel = window.getSelection();
+            range.selectNodeContents(textContentRef.value);
+            range.collapse(false);
+            sel?.removeAllRanges();
+            sel?.addRange(range);
+        }
+    });
+};
+
+// ★★★ 追加: 編集モードを終了する関数 ★★★
+const disableEditing = () => {
+    isEditing.value = false;
+};
+
 // テキスト編集用の関数
 const updateContent = (event: Event) => {
     const target = event.target as HTMLParagraphElement;
@@ -60,15 +86,15 @@ const updateContent = (event: Event) => {
     emit('update', updatedState);
 };
 
-// フォーカスが外れた時に、空のテキストをデフォルトに戻す
+// フォーカスが外れた時に編集モードを終了し、空の場合はデフォルトテキストに戻す
 const onBlur = (event: Event) => {
+    disableEditing();
     const target = event.target as HTMLParagraphElement;
     if (target.innerText.trim() === '') {
         const updatedState = { ...props.state, content: "テキスト" };
         emit('update', updatedState);
     }
 }
-
 </script>
 
 <style scoped>
@@ -94,12 +120,13 @@ const onBlur = (event: Event) => {
 
 /* テキスト要素固有のスタイル */
 .text {
-    /* 背景や枠線は基本的に不要 */
     background: transparent;
     color: #333;
-    font-size: 1.5em; /* フォントサイズは後でコントロールパネルで変更できるようにする */
+    font-size: 1.5em;
     font-weight: bold;
     padding: 10px;
+    /* ★★★ 修正: ドラッグできない問題を解決するため、テキスト選択を無効化 ★★★ */
+    user-select: none;
 }
 
 .text-content {
@@ -111,6 +138,7 @@ const onBlur = (event: Event) => {
 }
 .text-content[contenteditable="true"] {
     cursor: text;
+    user-select: auto; /* 編集モードの時だけテキスト選択を許可 */
 }
 
 
