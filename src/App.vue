@@ -9,6 +9,8 @@
       <div class="toolbar">
         <button @click="addElement('box')">ボックス追加</button>
         <button @click="addElement('circle')">円を追加</button>
+        <!-- ★★★ 追加: テキスト追加ボタン ★★★ -->
+        <button @click="addElement('text')">テキスト追加</button>
       </div>
       <div id="sandbox" ref="sandboxRef" @click.self="deselectAll" :style="sandboxStyle">
         <!-- 動的コンポーネントで要素を描画 -->
@@ -19,6 +21,9 @@
           :state="element"
           :is-selected="selectedElementId === element.id"
           :is-layout-mode="editMode === 'layout'"
+          @update="handleElementUpdate"
+          @select="selectElement"
+          @clone="cloneElement"
         />
       </div>
     </div>
@@ -99,6 +104,7 @@
 import { ref, computed, onMounted, nextTick, reactive, watch, type CSSProperties } from 'vue';
 import VisualBox from './components/VisualBox.vue';
 import VisualCircle from './components/VisualCircle.vue';
+import VisualText from './components/VisualText.vue'; // ★★★ 追加 ★★★
 import type { ElementState } from './types';
 import interact from 'interactjs';
 
@@ -117,9 +123,11 @@ const flexState = reactive({
     gap: 10
 });
 
+// ★★★ 修正: VisualTextを追加 ★★★
 const componentMap = {
     box: VisualBox,
-    circle: VisualCircle
+    circle: VisualCircle,
+    text: VisualText
 };
 
 const sandboxStyle = computed((): CSSProperties => {
@@ -166,7 +174,8 @@ const generatedLayoutCss = computed(() => {
     return code.trim().replace(/^ {4}/gm, '    ');
 });
 
-const addElement = (type: 'box' | 'circle', initialState: Partial<ElementState> = {}) => {
+// ★★★ 修正: 新しい要素タイプに対応 ★★★
+const addElement = (type: 'box' | 'circle' | 'text', initialState: Partial<ElementState> = {}) => {
   const sandboxRect = sandboxRef.value?.getBoundingClientRect();
   elementCounter++;
   const id = `${type}-${elementCounter}`;
@@ -175,7 +184,7 @@ const addElement = (type: 'box' | 'circle', initialState: Partial<ElementState> 
     x: initialState.x ?? (sandboxRect ? sandboxRect.width / 2 - 75 : 100),
     y: initialState.y ?? (sandboxRect ? sandboxRect.height / 2 - 75 : 100),
     width: initialState.width ?? 150,
-    height: initialState.height ?? 150,
+    height: initialState.height ?? (type === 'text' ? 50 : 150), // テキストは高さを自動に近づける
     angle: initialState.angle ?? 0,
     content: `${type.toUpperCase()} ${elementCounter}`,
     zIndex: elementCounter,
@@ -254,6 +263,9 @@ const deleteSelectedElement = () => {
 }
 
 const initializeInteract = () => {
+    interact('.visual-element').unset(); 
+    interact('.rotate-handle').unset();
+
     interact('.visual-element')
         .on('down', (event) => {
             if (editMode.value === 'individual') {
@@ -294,8 +306,7 @@ const initializeInteract = () => {
                         if (element.type === 'circle') {
                             updates.height = event.rect.width;
                         }
-                        // ★★★ 修正: ここがエラーの原因でした ★★★
-                        handleElementUpdate(updates as ElementState);
+                        updateElementState(element.id, updates);
                     }
                 }
             },
@@ -329,8 +340,6 @@ const initializeInteract = () => {
 onMounted(() => {
     nextTick(() => {
         addElement('box');
-        addElement('box');
-        addElement('circle');
         selectElement(null);
     });
     initializeInteract();
