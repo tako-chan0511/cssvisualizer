@@ -6,7 +6,8 @@
     :style="boxStyle"
   >
     {{ state.content }}
-    <div v-if="isSelected" class="rotate-handle"></div>
+    <!-- 個別編集モードの時だけ回転ハンドルを表示 -->
+    <div v-if="isSelected && !isLayoutMode" class="rotate-handle"></div>
   </div>
 </template>
 
@@ -14,28 +15,36 @@
 import { computed, type CSSProperties } from 'vue';
 import type { BoxState } from '../types';
 
-// propsは親コンポーネント(App.vue)から渡されるデータ。
-// このコンポーネントは、このデータに基づいて自身の見た目を決定します。
 const props = defineProps<{
   state: BoxState;
   isSelected: boolean;
+  isLayoutMode: boolean; // レイアウトモードかどうかを親から受け取る
 }>();
 
-// 見た目は常に親から渡されるprops(`state`)に追従する
-// このコンポーネント自身は位置(x, y)やサイズ(width, height)のデータを持たない
-const boxStyle = computed((): CSSProperties => ({
-    width: `${props.state.width}px`,
-    height: `${props.state.height}px`,
-    zIndex: props.state.zIndex,
-    // transformプロパティで位置、回転をまとめて設定
-    position: 'absolute', // interact.jsが正しく座標を計算するために必要
-    left: '0px',
-    top: '0px',
-    transform: `translate(${props.state.x}px, ${props.state.y}px) rotate(${props.state.angle}deg)`,
-}));
+// レイアウトモードかどうかでスタイルを切り替える
+const boxStyle = computed((): CSSProperties => {
+    if (props.isLayoutMode) {
+        // レイアウトモードでは、Flexboxアイテムとしてのスタイルを適用
+        return {
+            width: `${props.state.width}px`,
+            height: `${props.state.height}px`,
+            // transform や position はFlexboxコンテナが制御するのでここでは不要
+        };
+    } else {
+        // 個別編集モードでは、絶対配置でスタイルを適用
+        return {
+            width: `${props.state.width}px`,
+            height: `${props.state.height}px`,
+            zIndex: props.state.zIndex,
+            position: 'absolute',
+            left: '0px',
+            top: '0px',
+            transform: `translate(${props.state.x}px, ${props.state.y}px) rotate(${props.state.angle}deg)`,
+        };
+    }
+});
 
-// onMountedフックやinteract.jsの初期化は、すべて親のApp.vueで行うため、
-// このコンポーネント内では完全に不要になります。
+// onMountedフックやinteract.jsの初期化はApp.vueに移動したため、このコンポーネントでは完全に不要
 </script>
 
 <style scoped>
@@ -50,10 +59,11 @@ const boxStyle = computed((): CSSProperties => ({
     font-size: 1.5em;
     font-weight: bold;
     cursor: grab;
-    touch-action: none;
+    /* positionは動的に設定するため、ここでは削除 */
     box-sizing: border-box;
     border: 3px solid transparent;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: all 0.2s; 
+    flex-shrink: 0; /* Flexboxコンテナ内で縮まないようにする */
 }
 .box:active {
     cursor: grabbing;
@@ -61,7 +71,7 @@ const boxStyle = computed((): CSSProperties => ({
 .box.selected {
     border-color: #ffc107;
     box-shadow: 0 0 20px rgba(255, 193, 7, 0.8);
-    z-index: 10 !important; /* 選択中は最前面に */
+    z-index: 10 !important;
 }
 .rotate-handle {
     position: absolute;
