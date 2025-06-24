@@ -4,7 +4,7 @@
 export interface ElementState {
   id: string;
   // ★★★ 修正: 'text', 'image', 'button' を追加 ★★★
-  type: 'box' | 'circle' | 'text' | 'image' | 'button'; 
+  type: 'box' | 'circle' | 'text' | 'image' | 'button';
   x: number;
   y: number;
   width: number;
@@ -13,6 +13,9 @@ export interface ElementState {
   content: string; // ボックスやボタン、テキスト要素の表示内容
   zIndex: number;
 
+  // ★★★ 追加: 背景色プロパティ ★★★
+  backgroundColor: string;
+
   // ★★★ 追加: 画像要素のためのプロパティ（オプション） ★★★
-  src?: string; 
+  src?: string;
 }
