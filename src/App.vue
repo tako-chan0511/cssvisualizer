@@ -10,6 +10,8 @@
         <button @click="addElement('box')">ボックス追加</button>
         <button @click="addElement('circle')">円を追加</button>
         <button @click="addElement('text')">テキスト追加</button>
+        <button @click="addElement('image')">画像追加</button>
+        <button @click="addElement('button')">ボタン追加</button>
       </div>
       <div id="sandbox" ref="sandboxRef" @click.self="deselectAll" :style="sandboxStyle">
         <!-- 動的コンポーネントで要素を描画 -->
@@ -104,6 +106,8 @@ import { ref, computed, onMounted, nextTick, reactive, watch, type CSSProperties
 import VisualBox from './components/VisualBox.vue';
 import VisualCircle from './components/VisualCircle.vue';
 import VisualText from './components/VisualText.vue';
+import VisualImage from './components/VisualImage.vue';
+import VisualButton from './components/VisualButton.vue';
 import type { ElementState } from './types';
 import interact from 'interactjs';
 
@@ -126,8 +130,8 @@ const componentMap: any = {
     box: VisualBox,
     circle: VisualCircle,
     text: VisualText,
-    image: VisualBox, // 将来のためにプレースホルダ
-    button: VisualBox, // 将来のためにプレースホルダ
+    image: VisualImage,
+    button: VisualButton,
 };
 
 const sandboxStyle = computed((): CSSProperties => {
@@ -174,20 +178,38 @@ const generatedLayoutCss = computed(() => {
     return code.trim().replace(/^ {4}/gm, '    ');
 });
 
-// ★★★ 修正1: addElementの型を ElementState['type'] にする ★★★
 const addElement = (type: ElementState['type'], initialState: Partial<ElementState> = {}) => {
   const sandboxRect = sandboxRef.value?.getBoundingClientRect();
   elementCounter++;
   const id = `${type}-${elementCounter}`;
+  
+  const defaults = {
+      x: sandboxRect ? sandboxRect.width / 2 - 75 : 100,
+      y: sandboxRect ? sandboxRect.height / 2 - 75 : 100,
+      width: 150,
+      height: 150,
+      angle: 0,
+      content: `${type.toUpperCase()} ${elementCounter}`,
+      zIndex: elementCounter,
+  };
+
+  if(type === 'text') {
+      defaults.height = 50;
+      defaults.content = "テキスト要素";
+  }
+  if(type === 'button') {
+      defaults.height = 60;
+      defaults.content = "ボタン";
+  }
+  if(type === 'image') {
+      defaults.content = ""; // 画像にはテキストは不要
+  }
+
   const newElement: ElementState = {
     id, type,
-    x: initialState.x ?? (sandboxRect ? sandboxRect.width / 2 - 75 : 100),
-    y: initialState.y ?? (sandboxRect ? sandboxRect.height / 2 - 75 : 100),
-    width: initialState.width ?? 150,
-    height: initialState.height ?? (type === 'text' ? 50 : 150),
-    angle: initialState.angle ?? 0,
-    content: `${type.toUpperCase()} ${elementCounter}`,
-    zIndex: elementCounter,
+    ...defaults,
+    ...initialState,
+    src: type === 'image' ? 'https://placehold.co/600x400/EEE/31343C?text=Image' : undefined
   };
   elements.value.push(newElement);
   selectElement(id);
@@ -306,7 +328,6 @@ const initializeInteract = () => {
                         if (element.type === 'circle') {
                             updates.height = event.rect.width;
                         }
-                        // ★★★ 修正2: 間違っていた関数名を `handleElementUpdate` に修正 ★★★
                         handleElementUpdate({ ...element, ...updates });
                     }
                 }
@@ -361,7 +382,7 @@ body { font-family: 'M PLUS Rounded 1c', sans-serif; background-color: #f4f7f9; 
 .main-container { display: flex; width: 95%; max-width: 1200px; height: 90vh; max-height: 800px; background: #fff; border-radius: 16px; box-shadow: 0 15px 40px rgba(0,0,0,0.12); }
 .sandbox-container { flex: 1; padding: 30px; display: flex; flex-direction: column; position: relative; }
 .instructions { width: 100%; text-align: center; padding: 10px; background-color: #e9f5e9; border-radius: 8px; margin-bottom: 10px; color: #2c6e49; flex-shrink: 0; }
-.toolbar { display: flex; gap: 10px; margin-bottom: 10px; flex-shrink: 0; }
+.toolbar { display: flex; gap: 10px; margin-bottom: 10px; flex-shrink: 0; flex-wrap: wrap; }
 .toolbar button { padding: 8px 15px; border-radius: 6px; border: 1px solid #ccc; background-color: #f0f0f0; cursor: pointer; transition: all 0.2s; }
 .toolbar button:hover { background-color: #e0e0e0; border-color: #aaa; }
 #sandbox { width: 100%; flex-grow: 1; border: 2px dashed #d0dbe3; border-radius: 10px; position: relative; background-image: linear-gradient(to right, #eef2f5 1px, transparent 1px), linear-gradient(to bottom, #eef2f5 1px, transparent 1px); background-size: 20px 20px; }
