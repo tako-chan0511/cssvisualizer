@@ -171,6 +171,17 @@ import interact from "interactjs";
 
 const elements = ref<ElementState[]>([]);
 const selectedElementId = ref<string | null>(null);
+
+// 追加 start ▶
+/**
+ * selectedElementId の値をもとに、
+ * elements 配列から該当要素オブジェクトそのものを返す computed
+ */
+const selectedElement = computed<ElementState | null>(() => {
+  return elements.value.find(e => e.id === selectedElementId.value) || null;
+});
+// 追加 end ◀
+
 const sandboxRef = ref<HTMLElement | null>(null);
 let elementCounter = 0;
 const editMode = ref<"individual" | "layout">("individual");
