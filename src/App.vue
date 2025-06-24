@@ -11,6 +11,7 @@
         <button @click="addElement('circle')">円を追加</button>
       </div>
       <div id="sandbox" ref="sandboxRef" @click.self="deselectAll" :style="sandboxStyle">
+        <!-- 動的コンポーネントで要素を描画 -->
         <component
           v-for="element in elements"
           :key="element.id"
@@ -293,7 +294,8 @@ const initializeInteract = () => {
                         if (element.type === 'circle') {
                             updates.height = event.rect.width;
                         }
-                        updateElementState(element.id, updates);
+                        // ★★★ 修正: ここがエラーの原因でした ★★★
+                        handleElementUpdate(updates as ElementState);
                     }
                 }
             },
@@ -343,18 +345,11 @@ onMounted(() => {
 </script>
 
 <style>
-/* ... (グローバルスタイルは変更なし) ... */
+/* スタイルは変更ありません */
 body { font-family: 'M PLUS Rounded 1c', sans-serif; background-color: #f4f7f9; color: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
 #app { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
 .main-container { display: flex; width: 95%; max-width: 1200px; height: 90vh; max-height: 800px; background: #fff; border-radius: 16px; box-shadow: 0 15px 40px rgba(0,0,0,0.12); }
-/* ★★★ 修正: sandbox-containerの高さを揃える ★★★ */
-.sandbox-container { 
-    flex: 1; 
-    padding: 30px; 
-    display: flex; 
-    flex-direction: column; 
-    position: relative; 
-}
+.sandbox-container { flex: 1; padding: 30px; display: flex; flex-direction: column; position: relative; }
 .instructions { width: 100%; text-align: center; padding: 10px; background-color: #e9f5e9; border-radius: 8px; margin-bottom: 10px; color: #2c6e49; flex-shrink: 0; }
 .toolbar { display: flex; gap: 10px; margin-bottom: 10px; flex-shrink: 0; }
 .toolbar button { padding: 8px 15px; border-radius: 6px; border: 1px solid #ccc; background-color: #f0f0f0; cursor: pointer; transition: all 0.2s; }
@@ -370,20 +365,13 @@ body { font-family: 'M PLUS Rounded 1c', sans-serif; background-color: #f4f7f9; 
 #css-output-individual, #css-output-layout { 
     background-color: #212121; border: 1px solid #444; border-radius: 8px; padding: 20px; font-family: 'Source Code Pro', monospace; font-size: 1.1em; line-height: 1.6; white-space: pre-wrap; color: #f8f8f2; resize: none;
 }
-#css-output-individual { flex-grow: 1; overflow-y: auto; }
-/* ★★★ 修正: レイアウトパネルのレイアウト ★★★ */
-.layout-controls {
-  flex-shrink: 0; /* コントロールパネルは縮まない */
-  margin-bottom: 15px;
-}
+#css-output-individual { flex-grow: 1; overflow-y: auto;}
+.layout-controls { flex-shrink: 0; margin-bottom: 15px; }
+#css-output-layout { flex-grow: 1; overflow-y: auto; }
 .control-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; flex-shrink: 0; }
 .control-group label { font-size: 1em; color: #aaa; }
 .control-group select, .control-group input[type="range"] { width: 100%; padding: 8px; background-color: #333; border: 1px solid #555; color: white; border-radius: 4px; font-size: 1em; }
 .control-group span { text-align: right; color: #aaa; }
-#css-output-layout {
-  flex-grow: 1; /* 残りのスペースを埋める */
-  overflow-y: auto; /* 必要に応じてスクロール */
-}
 .button-area { margin-top: auto; padding-top: 20px; display: flex; gap: 10px; flex-shrink: 0;}
 .copy-button, .delete-button { flex: 1; padding: 15px; border: none; border-radius: 8px; font-size: 1.2em; font-weight: bold; cursor: pointer; transition: all 0.2s ease; }
 .copy-button { background-color: #4caf50; color: white; }

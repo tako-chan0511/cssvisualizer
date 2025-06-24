@@ -1,1 +1,1 @@
-{"root":["./src/main.ts","./src/types.ts","./src/vite-env.d.ts","./src/app.vue","./src/components/visualbox.vue"],"version":"5.8.3"}
+{"root":["./src/main.ts","./src/types.ts","./src/vite-env.d.ts","./src/app.vue","./src/components/visualbox.vue","./src/components/visualcircle.vue"],"version":"5.8.3"}

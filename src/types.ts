@@ -1,18 +1,14 @@
-// src/types.ts の変更案
+// src/types.ts
 
-export interface ElementState { // BoxStateからElementStateに改名
+// 操作対象となる要素（ボックス、円など）の状態を定義する共通の型
+export interface ElementState {
   id: string;
-  type: 'box' | 'circle' | 'text' | 'image' | 'button'; // ★要素の種類を追加
+  type: 'box' | 'circle'; // ★★★ 修正: 実装済みの型のみに限定 ★★★
   x: number;
   y: number;
   width: number;
   height: number;
   angle: number;
-  content: string; // テキストやボタンのラベルに利用
+  content: string;
   zIndex: number;
-  // 画像用のプロパティなどをここに追加していく
-  // src?: string; 
-  // スタイル用のプロパティ
-  // backgroundColor?: string;
-  // borderRadius?: string;
 }
