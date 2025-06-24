@@ -9,7 +9,6 @@
       <div class="toolbar">
         <button @click="addElement('box')">ボックス追加</button>
         <button @click="addElement('circle')">円を追加</button>
-        <!-- ★★★ 追加: テキスト追加ボタン ★★★ -->
         <button @click="addElement('text')">テキスト追加</button>
       </div>
       <div id="sandbox" ref="sandboxRef" @click.self="deselectAll" :style="sandboxStyle">
@@ -104,7 +103,7 @@
 import { ref, computed, onMounted, nextTick, reactive, watch, type CSSProperties } from 'vue';
 import VisualBox from './components/VisualBox.vue';
 import VisualCircle from './components/VisualCircle.vue';
-import VisualText from './components/VisualText.vue'; // ★★★ 追加 ★★★
+import VisualText from './components/VisualText.vue';
 import type { ElementState } from './types';
 import interact from 'interactjs';
 
@@ -123,11 +122,12 @@ const flexState = reactive({
     gap: 10
 });
 
-// ★★★ 修正: VisualTextを追加 ★★★
-const componentMap = {
+const componentMap: any = {
     box: VisualBox,
     circle: VisualCircle,
-    text: VisualText
+    text: VisualText,
+    image: VisualBox, // 将来のためにプレースホルダ
+    button: VisualBox, // 将来のためにプレースホルダ
 };
 
 const sandboxStyle = computed((): CSSProperties => {
@@ -174,8 +174,8 @@ const generatedLayoutCss = computed(() => {
     return code.trim().replace(/^ {4}/gm, '    ');
 });
 
-// ★★★ 修正: 新しい要素タイプに対応 ★★★
-const addElement = (type: 'box' | 'circle' | 'text', initialState: Partial<ElementState> = {}) => {
+// ★★★ 修正1: addElementの型を ElementState['type'] にする ★★★
+const addElement = (type: ElementState['type'], initialState: Partial<ElementState> = {}) => {
   const sandboxRect = sandboxRef.value?.getBoundingClientRect();
   elementCounter++;
   const id = `${type}-${elementCounter}`;
@@ -184,7 +184,7 @@ const addElement = (type: 'box' | 'circle' | 'text', initialState: Partial<Eleme
     x: initialState.x ?? (sandboxRect ? sandboxRect.width / 2 - 75 : 100),
     y: initialState.y ?? (sandboxRect ? sandboxRect.height / 2 - 75 : 100),
     width: initialState.width ?? 150,
-    height: initialState.height ?? (type === 'text' ? 50 : 150), // テキストは高さを自動に近づける
+    height: initialState.height ?? (type === 'text' ? 50 : 150),
     angle: initialState.angle ?? 0,
     content: `${type.toUpperCase()} ${elementCounter}`,
     zIndex: elementCounter,
@@ -306,7 +306,8 @@ const initializeInteract = () => {
                         if (element.type === 'circle') {
                             updates.height = event.rect.width;
                         }
-                        updateElementState(element.id, updates);
+                        // ★★★ 修正2: 間違っていた関数名を `handleElementUpdate` に修正 ★★★
+                        handleElementUpdate({ ...element, ...updates });
                     }
                 }
             },
