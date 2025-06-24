@@ -313,11 +313,17 @@ const handleElementUpdate = (newState: ElementState) => {
   }
 };
 
+// 複製するときは x/y とサイズ・回転だけ受け渡し。
+// id と content は addElement() 側で再生成させる
 const cloneElement = (originalState: ElementState) => {
   addElement(originalState.type, {
-    ...originalState,
+    // 移動だけコピー
     x: originalState.x + 20,
     y: originalState.y + 20,
+    // 必要ならサイズや回転もコピーしたい場合はここに足す：
+    width: originalState.width,
+    height: originalState.height,
+    angle: originalState.angle,
   });
 };
 
