@@ -18,7 +18,6 @@
     <!-- 右側のコード表示エリア -->
     <div class="code-container">
       <h2>Generated CSS</h2>
-      <!-- ★★★ 修正: <pre> から <textarea> に変更 ★★★ -->
       <textarea 
         id="css-output" 
         :value="generatedCss"
@@ -42,7 +41,8 @@ let boxCounter = 0;
 
 const createNewBox = (initialState: Partial<BoxState> = {}) => {
   const sandboxRect = sandboxRef.value?.getBoundingClientRect();
-  const id = `box-${boxCounter++}`;
+  boxCounter++;
+  const id = `box-${boxCounter}`;
   const newBox: BoxState = {
     id: id,
     x: initialState.x ?? (sandboxRect ? sandboxRect.width / 2 - 75 : 100),
@@ -92,13 +92,10 @@ const generatedCss = computed(() => {
     z-index: ${zIndex};
     transform: translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${angle.toFixed(1)}deg);
 }`;
-  // インデントを削除して整形
   return code.trim().replace(/^ {4}/gm, '    ');
 });
 
-/**
- * ★★★ 追加: CSSコードの編集をボックスのスタイルに反映させる関数 ★★★
- */
+
 const updateBoxFromCss = (event: Event) => {
     const target = event.target as HTMLTextAreaElement;
     const cssText = target.value;
@@ -109,6 +106,7 @@ const updateBoxFromCss = (event: Event) => {
         // 正規表現を使って各プロパティの値を抽出
         const widthMatch = cssText.match(/width:\s*(\d*\.?\d+)/);
         const heightMatch = cssText.match(/height:\s*(\d*\.?\d+)/);
+        const zIndexMatch = cssText.match(/z-index:\s*(\d+)/); // ★★★ 修正: z-indexを抽出する正規表現を追加 ★★★
         const translateMatch = cssText.match(/translate\(\s*(-?\d*\.?\d+)px,\s*(-?\d*\.?\d+)px\)/);
         const rotateMatch = cssText.match(/rotate\(\s*(-?\d*\.?\d+)deg\)/);
 
@@ -116,6 +114,7 @@ const updateBoxFromCss = (event: Event) => {
 
         if (widthMatch) updates.width = parseFloat(widthMatch[1]);
         if (heightMatch) updates.height = parseFloat(heightMatch[1]);
+        if (zIndexMatch) updates.zIndex = parseInt(zIndexMatch[1], 10); // ★★★ 修正: z-indexを更新リストに追加 ★★★
         if (translateMatch) {
             updates.x = parseFloat(translateMatch[1]);
             updates.y = parseFloat(translateMatch[2]);
@@ -222,7 +221,6 @@ body { font-family: 'M PLUS Rounded 1c', sans-serif; background-color: #f4f7f9; 
 #sandbox { width: 100%; flex-grow: 1; border: 2px dashed #d0dbe3; border-radius: 10px; position: relative; background-image: linear-gradient(to right, #eef2f5 1px, transparent 1px), linear-gradient(to bottom, #eef2f5 1px, transparent 1px); background-size: 20px 20px; }
 .code-container { width: 40%; min-width: 400px; background-color: #2d2d2d; color: #f8f8f2; padding: 30px; display: flex; flex-direction: column; box-sizing: border-box; border-left: 1px solid #ddd; }
 .code-container h2 { margin-top: 0; margin-bottom: 20px; font-size: 1.8em; border-bottom: 2px solid #444; padding-bottom: 10px; }
-/* ★★★ 修正: <textarea> 用のスタイル ★★★ */
 #css-output { 
     flex-grow: 1; 
     background-color: #212121; 
