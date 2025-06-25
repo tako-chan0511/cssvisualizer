@@ -15,6 +15,10 @@
 
   <!-- 選択中かつ個別編集モードのときだけ出すコントロール -->
   <div v-if="isSelected && !isLayoutMode" class="controls">
+      <label>
+      テキスト:
+      <input type="text" v-model="props.state.content" />
+    </label>
     <label>
       幅: {{ width }}px
       <input type="range" v-model.number="width" min="50" max="600" />
@@ -27,6 +31,36 @@
       背景色:
       <input type="color" v-model="bgColor" />
     </label>
+
+    <label>
+      フォント:
+      <select v-model="fontFamily">
+        <option value="sans-serif">sans-serif</option>
+        <option value="serif">serif</option>
+        <option value="monospace">monospace</option>
+        <option value="cursive">cursive</option>
+      </select>
+    </label>
+
+    <label>
+      太さ:
+      <select v-model="fontWeight">
+        <option value="normal">normal</option>
+        <option value="bold">bold</option>
+        <option value="bolder">bolder</option>
+        <option value="lighter">lighter</option>
+      </select>
+    </label>
+
+    <label>
+      スタイル:
+      <select v-model="fontStyle">
+        <option value="normal">normal</option>
+        <option value="italic">italic</option>
+        <option value="oblique">oblique</option>
+      </select>
+    </label>
+
     <label>
       X: {{ x }}px
       <input type="range" v-model.number="x" :min="-300" :max="300" />
@@ -39,61 +73,74 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, type CSSProperties } from 'vue'
-import type { ElementState } from '../types'
+import { ref, watch, computed, type CSSProperties } from "vue";
+import type { ElementState } from "../types";
 
 const props = defineProps<{
-  state: ElementState
-  isSelected: boolean
-  isLayoutMode: boolean
-}>()
+  state: ElementState;
+  isSelected: boolean;
+  isLayoutMode: boolean;
+}>();
 
 // ローカル双方向バインド用
-const width   = ref(props.state.width)
-const height  = ref(props.state.height)
-const bgColor = ref(props.state.backgroundColor ?? '#ffffff')
-const x       = ref(props.state.x)
-const y       = ref(props.state.y)
+const width = ref(props.state.width);
+const height = ref(props.state.height);
+const bgColor = ref(props.state.backgroundColor ?? "#ffffff");
+const x = ref(props.state.x);
+const y = ref(props.state.y);
 
 // state を直接書き換えて親に反映
-watch(width,   v => props.state.width  = v)
-watch(height,  v => props.state.height = v)
-watch(bgColor, v => props.state.backgroundColor = v)
-watch(x,       v => props.state.x      = v)
-watch(y,       v => props.state.y      = v)
+watch(width, (v) => (props.state.width = v));
+watch(height, (v) => (props.state.height = v));
+watch(bgColor, (v) => (props.state.backgroundColor = v));
+watch(x, (v) => (props.state.x = v));
+watch(y, (v) => (props.state.y = v));
+
+const fontFamily = ref(props.state.fontFamily ?? 'sans-serif')
+const fontWeight = ref(props.state.fontWeight ?? 'normal')
+const fontStyle  = ref(props.state.fontStyle  ?? 'normal')
+
+// state に反映
+watch(fontFamily, v => props.state.fontFamily = v)
+watch(fontWeight, v => props.state.fontWeight = v)
+watch(fontStyle,  v => props.state.fontStyle  = v)
+
 
 // 選択ハンドリング（App.vue が listen しています）
 const emit = defineEmits<{
-  (e: 'select', id: string): void
-}>()
+  (e: "select", id: string): void;
+}>();
 function onSelect() {
-  emit('select', props.state.id)
+  emit("select", props.state.id);
 }
 
 // スタイル
 const elementStyle = computed<CSSProperties>(() => {
   const base: Record<string, any> = {
-    width:  `${props.state.width}px`,
+    width: `${props.state.width}px`,
     height: `${props.state.height}px`,
     backgroundColor: props.state.backgroundColor,
-    borderRadius: '50%',
+    fontFamily: props.state.fontFamily,
+    fontWeight: props.state.fontWeight,
+    fontStyle:  props.state.fontStyle,
+    borderRadius: "50%",
     zIndex: props.state.zIndex,
-    boxSizing: 'border-box',
-  }
+    boxSizing: "border-box",
+  };
   if (props.isLayoutMode) {
     return {
-      ...base
-    }
+      ...base,
+    };
   } else {
     return {
       ...base,
-      position: 'absolute' as CSSProperties['position'],
-      left:   '0px',
-      top:    '0px',
+      position: "absolute" as CSSProperties["position"],
+      left: "0px",
+      top: "0px",
       transform: `translate(${props.state.x}px, ${props.state.y}px) rotate(${props.state.angle}deg)`,
-    }
+    };
   }
-})
+});
 </script>
 
 <style scoped>
@@ -112,7 +159,7 @@ const elementStyle = computed<CSSProperties>(() => {
 /* 円固有 */
 .visual-element.circle {
   border: 3px solid #000;
-  box-shadow: 0 5px 15px rgba(33,147,176,0.4);
+  box-shadow: 0 5px 15px rgba(33, 147, 176, 0.4);
 }
 
 /* ラベルを中央に */
