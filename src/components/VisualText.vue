@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, type CSSProperties } from 'vue'
 import type { ElementState } from '../types'
 
 // props 受け取り
@@ -65,7 +65,7 @@ const emit = defineEmits<{
   (e: 'select', id: string): void
 }>()
 
-// ローカルバインド用 state コピー
+// ローカルバインド用
 const textContent = ref(props.state.content)
 const fontSize    = ref(props.state.fontSize ?? 24)
 const fontColor   = ref(props.state.fontColor ?? '#333333')
@@ -75,7 +75,7 @@ const height      = ref(props.state.height)
 const x           = ref(props.state.x)
 const y           = ref(props.state.y)
 
-// state への反映 (親がリアクティブに拾います)
+// state への反映
 watch(textContent, v => props.state.content = v)
 watch(fontSize,    v => props.state.fontSize = v)
 watch(fontColor,   v => props.state.fontColor = v)
@@ -91,40 +91,39 @@ function onSelect() {
 }
 
 // 要素スタイル
-const elementStyle = computed(() => {
-  const base = props.isLayoutMode
-    ? {
-        width:  `${props.state.width}px`,
-        height: `${props.state.height}px`,
-        backgroundColor: props.state.backgroundColor,
-        flex: '0 0 auto',
-      }
-    : {
-        position: 'absolute',
-        left: '0px',
-        top:  '0px',
-        width:  `${props.state.width}px`,
-        height: `${props.state.height}px`,
-        transform: `translate(${props.state.x}px, ${props.state.y}px) rotate(${props.state.angle}deg)`,
-        backgroundColor: props.state.backgroundColor,
-        zIndex: props.state.zIndex,
-      }
-
-  return {
-    ...base,
-    color: props.state.fontColor,
-    fontSize: `${props.state.fontSize}px`,
+const elementStyle = computed<CSSProperties>(() => {
+  const { state, isLayoutMode } = props
+  const baseStyle: CSSProperties = {
+    color: state.fontColor,
+    fontSize: `${state.fontSize}px`,
+    backgroundColor: state.backgroundColor,
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     textAlign: 'center',
     wordBreak: 'break-word',
+    width: `${state.width}px`,
+    height: `${state.height}px`,
+  }
+
+  if (isLayoutMode) {
+    // レイアウトモードでは絶対配置を外す
+    return baseStyle
+  } else {
+    // 個別編集モードでは絶対配置と回転を追加
+    return {
+      ...baseStyle,
+      position: 'absolute',
+      left: '0px',
+      top: '0px',
+      transform: `translate(${state.x}px, ${state.y}px) rotate(${state.angle}deg)`,
+      zIndex: state.zIndex,
+    }
   }
 })
 </script>
 
 <style scoped>
-/* 共通 */
 .visual-element {
   cursor: grab;
   touch-action: none;
@@ -135,8 +134,12 @@ const elementStyle = computed(() => {
 }
 .visual-element.selected {
   border-color: #ffc107;
-  box-shadow: 0 0 20px rgba(255,193,7,0.8);
+  box-shadow: 0 0 20px rgba(255, 193, 7, 0.8);
   z-index: 100 !important;
+}
+.visual-element.text {
+  /* テキスト要素固有 */
+  background: transparent;
 }
 .rotate-handle {
   position: absolute;
@@ -149,12 +152,6 @@ const elementStyle = computed(() => {
   right: -12px;
   cursor: alias;
 }
-
-/* テキスト固有 */
-.visual-element.text {
-  background: transparent;
-}
-
 /* コントロールパネル */
 .controls {
   position: fixed;
