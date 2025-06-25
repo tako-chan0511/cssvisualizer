@@ -102,6 +102,8 @@ const elementStyle = computed<CSSProperties>(() => {
   touch-action: none;
   transition: all 0.2s;
   position: relative;
+  /* すべての要素に対して flex 伸縮させない */
+  flex: 0 0 auto;
 }
 .visual-element.selected {
   outline: 3px solid #ffc107;
