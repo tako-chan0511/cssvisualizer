@@ -513,7 +513,7 @@ const initializeInteract = () => {
 
 onMounted(() => {
   nextTick(() => {
-    addElement("box");
+    // addElement("box");
     selectElement(null);
   });
   initializeInteract();
