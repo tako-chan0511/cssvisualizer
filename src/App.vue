@@ -322,7 +322,7 @@ const generatedIndividualCss = computed(() => {
   }`;
 
   // BOX / TEXT / BUTTON に対してフォント系プロパティを追加
-  if (type === "box" || type === "text" || type === "button") {
+  if (type === "box" || type === "text" || type === "button" || type === "circle") {
     // 挿入する文字系CSS
     let fontCss = 
       `    color: ${fontColor   || "#000000"};\n` +
