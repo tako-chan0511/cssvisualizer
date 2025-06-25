@@ -219,6 +219,7 @@ const sandboxStyle = computed((): CSSProperties => {
 });
 
 // 個別要素のCSSコードを生成するcomputed （フォントサイズ・文字色も追加）
+// 個別要素のCSSコードを生成するcomputed （フォントサイズ・文字色も追加）
 const generatedIndividualCss = computed(() => {
   if (!selectedElement.value) {
     return "/* 要素をクリックして選択してください */";
@@ -250,14 +251,31 @@ const generatedIndividualCss = computed(() => {
 
   // テキスト要素の場合のみ文字関連のプロパティを追加
   if (type === "text") {
-    css = css.replace(/\}$/, 
+    css = css.replace(
+      /\}$/,
       `    color: ${fontColor || "#000000"};\n` +
-      `    font-size: ${fontSize?.toFixed(1) || 16}px;\n}`
+      `    font-size: ${fontSize?.toFixed(1) || 16}px;\n` +
+      `}`
+    );
+  }
+
+  // ボタン要素の場合のみボタン独自のプロパティを追加
+  if (type === "button") {
+    // すでに閉じカッコ } があるので最後の } の直前に挿入
+    css = css.replace(
+      /\}$/,
+      `    color: ${fontColor || "#000000"};\n` +
+      `    font-size: ${fontSize?.toFixed(1) || 16}px;\n` +
+      `    border: none;\n` +
+      `    border-radius: 4px;\n` +
+      `    padding: 8px 16px;\n` +
+      `}`
     );
   }
 
   return css.trim();
 });
+
 
 const generatedLayoutCss = computed(() => {
   const code = `

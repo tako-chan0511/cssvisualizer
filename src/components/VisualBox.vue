@@ -1,8 +1,9 @@
+<!-- src/components/VisualButton.vue -->
 <template>
-  <!-- 実際のボックス -->
+  <!-- 実際のボタン -->
   <div
     :id="props.state.id"
-    class="visual-element box"
+    class="visual-element button"
     :class="{ selected: props.isSelected }"
     :style="elementStyle"
   >
@@ -13,16 +14,28 @@
   <!-- コントロールパネル -->
   <div v-if="props.isSelected && !props.isLayoutMode" class="controls">
     <label>
+      テキスト:
+      <input type="text" v-model="props.state.content" />
+    </label>
+    <label>
+      フォントサイズ: {{ fontSize }}px
+      <input type="range" v-model.number="fontSize" min="10" max="72" />
+    </label>
+    <label>
+      文字色:
+      <input type="color" v-model="fontColor" />
+    </label>
+    <label>
+      背景色:
+      <input type="color" v-model="bgColor" />
+    </label>
+    <label>
       幅: {{ width }}px
       <input type="range" v-model.number="width" min="50" max="600" />
     </label>
     <label>
       高さ: {{ height }}px
-      <input type="range" v-model.number="height" min="50" max="600" />
-    </label>
-    <label>
-      背景色:
-      <input type="color" v-model="bgColor" />
+      <input type="range" v-model.number="height" min="30" max="200" />
     </label>
     <label>
       X: {{ x }}px
@@ -36,87 +49,80 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, type CSSProperties } from 'vue';
-import type { ElementState } from '../types';
+import { ref, watch, computed, type CSSProperties } from 'vue'
+import type { ElementState } from '../types'
 
 const props = defineProps<{
-  state: ElementState;
-  isSelected: boolean;
-  isLayoutMode: boolean;
-}>();
+  state: ElementState
+  isSelected: boolean
+  isLayoutMode: boolean
+}>()
 
-// ── 双方向バインド用ローカル refs ──
-const width = ref(props.state.width);
-const height = ref(props.state.height);
-const bgColor = ref(props.state.backgroundColor || '#6dd5ed'); // default
-const x = ref(props.state.x);
-const y = ref(props.state.y);
+// 双方向バインド用ローカル refs
+const width    = ref(props.state.width)
+const height   = ref(props.state.height)
+const bgColor  = ref(props.state.backgroundColor || '#007acc')
+const fontSize = ref(props.state.fontSize ?? 16)
+const fontColor= ref(props.state.fontColor ?? '#000000')
+const x        = ref(props.state.x)
+const y        = ref(props.state.y)
 
-// ── コントロール側の変更を state に反映 ──
-watch(width, val => (props.state.width = val));
-watch(height, val => (props.state.height = val));
-watch(bgColor, val => (props.state.backgroundColor = val));
-watch(x, val => (props.state.x = val));
-watch(y, val => (props.state.y = val));
+// コントロールの変化を state に反映
+watch(width,    v => props.state.width  = v)
+watch(height,   v => props.state.height = v)
+watch(bgColor,  v => props.state.backgroundColor = v)
+watch(fontSize, v => props.state.fontSize = v)
+watch(fontColor,v => props.state.fontColor = v)
+watch(x,        v => props.state.x = v)
+watch(y,        v => props.state.y = v)
 
-// ── state 側の変更をコントロールに反映 ──
-watch(() => props.state.width, val => (width.value = val));
-watch(() => props.state.height, val => (height.value = val));
-watch(() => props.state.backgroundColor, val => (bgColor.value = val || '#6dd5ed'));
-watch(() => props.state.x, val => (x.value = val));
-watch(() => props.state.y, val => (y.value = val));
+// state 側の変更をコントロールに反映
+watch(() => props.state.width,           v => width.value     = v)
+watch(() => props.state.height,          v => height.value    = v)
+watch(() => props.state.backgroundColor, v => bgColor.value   = v || '#007acc')
+watch(() => props.state.fontSize,        v => fontSize.value  = v)
+watch(() => props.state.fontColor,       v => fontColor.value = v)
+watch(() => props.state.x,               v => x.value         = v)
+watch(() => props.state.y,               v => y.value         = v)
 
-// ── 要素スタイル ──
+// スタイル
 const elementStyle = computed((): CSSProperties => {
-  const common = {
-    width: `${props.state.width}px`,
-    height: `${props.state.height}px`,
+  const base: CSSProperties = {
+    display:        'flex',
+    justifyContent: 'center',
+    alignItems:     'center',
+    color:          props.state.fontColor,
+    fontSize:       `${props.state.fontSize}px`,
     backgroundColor: props.state.backgroundColor,
-  };
+    width:          `${props.state.width}px`,
+    height:         `${props.state.height}px`,
+    border:         'none',
+    borderRadius:   '4px',
+    cursor:         'pointer',
+    userSelect:     'none',
+    boxSizing:      'border-box',
+  }
   if (props.isLayoutMode) {
-    return { ...common };
+    return base
   }
   return {
-    ...common,
-    position: 'absolute',
-    left: '0px',
-    top: '0px',
-    zIndex: props.state.zIndex,
+    ...base,
+    position:  'absolute',
+    left:      '0px',
+    top:       '0px',
     transform: `translate(${props.state.x}px, ${props.state.y}px) rotate(${props.state.angle}deg)`,
-  };
-});
+    zIndex:    props.state.zIndex,
+  }
+})
 </script>
 
 <style scoped>
-.visual-element {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 1.5em;
-  font-weight: bold;
-  cursor: grab;
-  touch-action: none;
-  box-sizing: border-box;
-  border: 3px solid transparent;
+.visual-element.button {
   transition: all 0.2s;
-  flex-shrink: 0;
-}
-.visual-element:active {
-  cursor: grabbing;
 }
 .visual-element.selected {
-  border-color: #ffc107;
-  box-shadow: 0 0 20px rgba(255, 193, 7, 0.8);
-  z-index: 100 !important;
+  outline: 2px solid #ffc107;
 }
-
-/* ボックス固有のスタイル（背景は elementStyle に委ねます） */
-.box {
-  color: white;
-  border-radius: 10px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-}
-
 .rotate-handle {
   position: absolute;
   width: 20px;
@@ -128,8 +134,6 @@ const elementStyle = computed((): CSSProperties => {
   right: -12px;
   cursor: alias;
 }
-
-/* コントロールパネル */
 .controls {
   position: fixed;
   top: 16px;
@@ -150,11 +154,9 @@ const elementStyle = computed((): CSSProperties => {
   width: 120px;
   vertical-align: middle;
 }
-.controls input[type="color"] {
-  width: 32px;
-  height: 24px;
-  padding: 0;
-  border: none;
-  vertical-align: middle;
+.controls input[type="color"],
+.controls input[type="text"] {
+  width: 100%;
+  margin-top: 2px;
 }
 </style>
