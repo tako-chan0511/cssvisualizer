@@ -218,22 +218,45 @@ const sandboxStyle = computed((): CSSProperties => {
   return { height: "100%" };
 });
 
-// 個別要素のCSSコードを生成するcomputed
+// 個別要素のCSSコードを生成するcomputed （フォントサイズ・文字色も追加）
 const generatedIndividualCss = computed(() => {
-  const el = elements.value.find(e => e.id === selectedElementId.value);
-  if (!el) return "/* 要素をクリックして選択してください */";
-  const { id, width, height, x, y, angle, zIndex, backgroundColor } = el;
-  // 背景色を含めるように追加
-  const code = `
-#${id} {
+  if (!selectedElement.value) {
+    return "/* 要素をクリックして選択してください */";
+  }
+  const el = selectedElement.value;
+  const {
+    id,
+    width,
+    height,
+    x,
+    y,
+    angle,
+    zIndex,
+    backgroundColor,
+    fontSize,
+    fontColor,
+    type,
+  } = el;
+
+  // 基本のCSSを作成
+  let css = `#${id} {
     position: absolute;
     width: ${width.toFixed(1)}px;
     height: ${height.toFixed(1)}px;
-    background-color: ${backgroundColor || "#fff"};
+    background-color: ${backgroundColor || "#ffffff"};
     z-index: ${zIndex};
     transform: translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${angle.toFixed(1)}deg);
-}`;
-  return code.trim().replace(/^ {4}/gm, "    ");
+  }`;
+
+  // テキスト要素の場合のみ文字関連のプロパティを追加
+  if (type === "text") {
+    css = css.replace(/\}$/, 
+      `    color: ${fontColor || "#000000"};\n` +
+      `    font-size: ${fontSize?.toFixed(1) || 16}px;\n}`
+    );
+  }
+
+  return css.trim();
 });
 
 const generatedLayoutCss = computed(() => {

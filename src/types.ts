@@ -15,6 +15,10 @@ export interface ElementState {
 
   // ★★★ 追加: 背景色プロパティ ★★★
   backgroundColor: string;
+  // ★★★ テクスト関連のプロパティ ★★★
+  fontSize?: number
+  fontColor?: string
+  
 
   // ★★★ 追加: 画像要素のためのプロパティ（オプション） ★★★
   src?: string;

@@ -1,156 +1,184 @@
+<!-- src/components/VisualText.vue -->
 <template>
+  <!-- 実際のテキスト要素 -->
   <div
     :id="state.id"
     class="visual-element text"
     :class="{ selected: isSelected }"
     :style="elementStyle"
-    @dblclick="enableEditing"
+    @mousedown.stop="onSelect"
   >
-    <p
-      ref="textContentRef"
-      :contenteditable="isEditing"
-      @input="updateContent"
-      @blur="onBlur"
-      @keydown.esc.stop="disableEditing"
-      class="text-content"
-    >
-      {{ state.content }}
-    </p>
+    {{ state.content }}
     <div v-if="isSelected && !isLayoutMode" class="rotate-handle"></div>
+  </div>
+
+  <!-- 個別編集モード時のコントロールパネル -->
+  <div v-if="isSelected && !isLayoutMode" class="controls">
+    <label>
+      テキスト:
+      <input type="text" v-model="textContent" />
+    </label>
+    <label>
+      フォントサイズ: {{ fontSize }}px
+      <input type="range" v-model.number="fontSize" min="10" max="72" />
+    </label>
+    <label>
+      文字色:
+      <input type="color" v-model="fontColor" />
+    </label>
+    <label>
+      背景色:
+      <input type="color" v-model="bgColor" />
+    </label>
+    <label>
+      幅: {{ width }}px
+      <input type="range" v-model.number="width" min="50" max="600" />
+    </label>
+    <label>
+      高さ: {{ height }}px
+      <input type="range" v-model.number="height" min="20" max="300" />
+    </label>
+    <label>
+      X: {{ x }}px
+      <input type="range" v-model.number="x" :min="-300" :max="300" />
+    </label>
+    <label>
+      Y: {{ y }}px
+      <input type="range" v-model.number="y" :min="-300" :max="300" />
+    </label>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, type CSSProperties, watch, nextTick } from 'vue';
-import type { ElementState } from '../types';
+import { ref, watch, computed } from 'vue'
+import type { ElementState } from '../types'
 
+// props 受け取り
 const props = defineProps<{
-  state: ElementState;
-  isSelected: boolean;
-  isLayoutMode: boolean;
-}>();
+  state: ElementState
+  isSelected: boolean
+  isLayoutMode: boolean
+}>()
 
+// emit 定義
 const emit = defineEmits<{
-  (e: 'update', state: ElementState): void;
-}>();
+  (e: 'select', id: string): void
+}>()
 
-// ★★★ 追加: テキスト編集モードの状態管理 ★★★
-const isEditing = ref(false);
-const textContentRef = ref<HTMLParagraphElement | null>(null);
+// ローカルバインド用 state コピー
+const textContent = ref(props.state.content)
+const fontSize    = ref(props.state.fontSize ?? 24)
+const fontColor   = ref(props.state.fontColor ?? '#333333')
+const bgColor     = ref(props.state.backgroundColor ?? '#ffffff')
+const width       = ref(props.state.width)
+const height      = ref(props.state.height)
+const x           = ref(props.state.x)
+const y           = ref(props.state.y)
 
-const elementStyle = computed((): CSSProperties => {
-    if (props.isLayoutMode) {
-        return {
-            position: 'relative',
-        };
-    } else {
-        return {
-            width: `${props.state.width}px`,
-            height: `${props.state.height}px`,
-            zIndex: props.state.zIndex,
-            position: 'absolute',
-            left: '0px',
-            top: '0px',
-            transform: `translate(${props.state.x}px, ${props.state.y}px) rotate(${props.state.angle}deg)`,
-        };
-    }
-});
+// state への反映 (親がリアクティブに拾います)
+watch(textContent, v => props.state.content = v)
+watch(fontSize,    v => props.state.fontSize = v)
+watch(fontColor,   v => props.state.fontColor = v)
+watch(bgColor,     v => props.state.backgroundColor = v)
+watch(width,       v => props.state.width = v)
+watch(height,      v => props.state.height = v)
+watch(x,           v => props.state.x = v)
+watch(y,           v => props.state.y = v)
 
-// ★★★ 追加: ダブルクリックで編集モードを開始する関数 ★★★
-const enableEditing = () => {
-    if (props.isLayoutMode) return;
-    isEditing.value = true;
-    // DOMが更新された後にフォーカスを当て、カーソルを末尾に移動
-    nextTick(() => {
-        if (textContentRef.value) {
-            textContentRef.value.focus();
-            const range = document.createRange();
-            const sel = window.getSelection();
-            range.selectNodeContents(textContentRef.value);
-            range.collapse(false);
-            sel?.removeAllRanges();
-            sel?.addRange(range);
-        }
-    });
-};
-
-// ★★★ 追加: 編集モードを終了する関数 ★★★
-const disableEditing = () => {
-    isEditing.value = false;
-};
-
-// テキスト編集用の関数
-const updateContent = (event: Event) => {
-    const target = event.target as HTMLParagraphElement;
-    const updatedState = { ...props.state, content: target.innerText };
-    emit('update', updatedState);
-};
-
-// フォーカスが外れた時に編集モードを終了し、空の場合はデフォルトテキストに戻す
-const onBlur = (event: Event) => {
-    disableEditing();
-    const target = event.target as HTMLParagraphElement;
-    if (target.innerText.trim() === '') {
-        const updatedState = { ...props.state, content: "テキスト" };
-        emit('update', updatedState);
-    }
+// 選択ハンドラ
+function onSelect() {
+  emit('select', props.state.id)
 }
+
+// 要素スタイル
+const elementStyle = computed(() => {
+  const base = props.isLayoutMode
+    ? {
+        width:  `${props.state.width}px`,
+        height: `${props.state.height}px`,
+        backgroundColor: props.state.backgroundColor,
+        flex: '0 0 auto',
+      }
+    : {
+        position: 'absolute',
+        left: '0px',
+        top:  '0px',
+        width:  `${props.state.width}px`,
+        height: `${props.state.height}px`,
+        transform: `translate(${props.state.x}px, ${props.state.y}px) rotate(${props.state.angle}deg)`,
+        backgroundColor: props.state.backgroundColor,
+        zIndex: props.state.zIndex,
+      }
+
+  return {
+    ...base,
+    color: props.state.fontColor,
+    fontSize: `${props.state.fontSize}px`,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    textAlign: 'center',
+    wordBreak: 'break-word',
+  }
+})
 </script>
 
 <style scoped>
+/* 共通 */
 .visual-element {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: grab;
-    touch-action: none;
-    box-sizing: border-box;
-    border: 3px solid transparent;
-    transition: all 0.2s; 
-    flex-shrink: 0;
-}
-.visual-element:active {
-    cursor: grabbing;
+  cursor: grab;
+  touch-action: none;
+  box-sizing: border-box;
+  border: 3px solid transparent;
+  transition: all 0.2s;
+  user-select: none;
 }
 .visual-element.selected {
-    border-color: #ffc107;
-    box-shadow: 0 0 20px rgba(255, 193, 7, 0.8);
-    z-index: 100 !important;
+  border-color: #ffc107;
+  box-shadow: 0 0 20px rgba(255,193,7,0.8);
+  z-index: 100 !important;
 }
-
-/* テキスト要素固有のスタイル */
-.text {
-    background: transparent;
-    color: #333;
-    font-size: 1.5em;
-    font-weight: bold;
-    padding: 10px;
-    /* ★★★ 修正: ドラッグできない問題を解決するため、テキスト選択を無効化 ★★★ */
-    user-select: none;
-}
-
-.text-content {
-    outline: none;
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-}
-.text-content[contenteditable="true"] {
-    cursor: text;
-    user-select: auto; /* 編集モードの時だけテキスト選択を許可 */
-}
-
-
 .rotate-handle {
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    background-color: #ffc107;
-    border: 2px solid white;
-    border-radius: 50%;
-    top: -12px;
-    right: -12px;
-    cursor: alias;
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background-color: #ffc107;
+  border: 2px solid white;
+  border-radius: 50%;
+  top: -12px;
+  right: -12px;
+  cursor: alias;
+}
+
+/* テキスト固有 */
+.visual-element.text {
+  background: transparent;
+}
+
+/* コントロールパネル */
+.controls {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  background: #fafafa;
+  border: 1px solid #ddd;
+  padding: 8px;
+  border-radius: 4px;
+  z-index: 1000;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.controls label {
+  display: block;
+  margin-bottom: 6px;
+}
+.controls input[type="range"] {
+  width: 120px;
+  vertical-align: middle;
+}
+.controls input[type="color"],
+.controls input[type="text"] {
+  width: 100%;
+  margin-top: 2px;
 }
 </style>
