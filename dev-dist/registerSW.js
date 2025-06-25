@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/cssvisualizer/dev-sw.js?dev-sw', { scope: '/cssvisualizer/', type: 'classic' })
