@@ -23,6 +23,34 @@
       <input type="range" v-model.number="fontSize" min="10" max="72" />
     </label>
     <label>
+      フォント:
+      <select v-model="fontFamily">
+        <option value="sans-serif">sans-serif</option>
+        <option value="serif">serif</option>
+        <option value="monospace">monospace</option>
+        <option value="cursive">cursive</option>
+      </select>
+    </label>
+
+    <label>
+      太さ:
+      <select v-model="fontWeight">
+        <option value="normal">normal</option>
+        <option value="bold">bold</option>
+        <option value="bolder">bolder</option>
+        <option value="lighter">lighter</option>
+      </select>
+    </label>
+
+    <label>
+      スタイル:
+      <select v-model="fontStyle">
+        <option value="normal">normal</option>
+        <option value="italic">italic</option>
+        <option value="oblique">oblique</option>
+      </select>
+    </label>
+    <label>
       文字色:
       <input type="color" v-model="fontColor" />
     </label>
@@ -50,77 +78,92 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, type CSSProperties } from 'vue'
-import type { ElementState } from '../types'
+import { ref, watch, computed, type CSSProperties } from "vue";
+import type { ElementState } from "../types";
 
 // props 受け取り
 const props = defineProps<{
-  state: ElementState
-  isSelected: boolean
-  isLayoutMode: boolean
-}>()
+  state: ElementState;
+  isSelected: boolean;
+  isLayoutMode: boolean;
+}>();
 
 // emit 定義
 const emit = defineEmits<{
-  (e: 'select', id: string): void
-}>()
+  (e: "select", id: string): void;
+}>();
 
 // ローカルバインド用
-const textContent = ref(props.state.content)
-const fontSize    = ref(props.state.fontSize ?? 24)
-const fontColor   = ref(props.state.fontColor ?? '#333333')
-const bgColor     = ref(props.state.backgroundColor ?? '#ffffff')
-const width       = ref(props.state.width)
-const height      = ref(props.state.height)
-const x           = ref(props.state.x)
-const y           = ref(props.state.y)
+const textContent = ref(props.state.content);
+const fontSize = ref(props.state.fontSize ?? 24);
+const fontColor = ref(props.state.fontColor ?? "#333333");
+const bgColor = ref(props.state.backgroundColor ?? "#ffffff");
+const width = ref(props.state.width);
+const height = ref(props.state.height);
+const x = ref(props.state.x);
+const y = ref(props.state.y);
 
 // state への反映
-watch(textContent, v => props.state.content = v)
-watch(fontSize,    v => props.state.fontSize = v)
-watch(fontColor,   v => props.state.fontColor = v)
-watch(bgColor,     v => props.state.backgroundColor = v)
-watch(width,       v => props.state.width = v)
-watch(height,      v => props.state.height = v)
-watch(x,           v => props.state.x = v)
-watch(y,           v => props.state.y = v)
+watch(textContent, (v) => (props.state.content = v));
+watch(fontSize, (v) => (props.state.fontSize = v));
+watch(fontColor, (v) => (props.state.fontColor = v));
+watch(bgColor, (v) => (props.state.backgroundColor = v));
+watch(width, (v) => (props.state.width = v));
+watch(height, (v) => (props.state.height = v));
+watch(x, (v) => (props.state.x = v));
+watch(y, (v) => (props.state.y = v));
+
+const fontFamily = ref(props.state.fontFamily ?? 'sans-serif')
+const fontWeight = ref(props.state.fontWeight ?? 'normal')
+const fontStyle  = ref(props.state.fontStyle  ?? 'normal')
+
+// state に反映
+watch(fontFamily, v => props.state.fontFamily = v)
+watch(fontWeight, v => props.state.fontWeight = v)
+watch(fontStyle,  v => props.state.fontStyle  = v)
+
+
+
 
 // 選択ハンドラ
 function onSelect() {
-  emit('select', props.state.id)
+  emit("select", props.state.id);
 }
 
 // 要素スタイル
 const elementStyle = computed<CSSProperties>(() => {
-  const { state, isLayoutMode } = props
+  const { state, isLayoutMode } = props;
   const baseStyle: CSSProperties = {
     color: state.fontColor,
     fontSize: `${state.fontSize}px`,
+    fontFamily: fontFamily.value,
+    fontWeight: fontWeight.value,
+    fontStyle:  fontStyle.value,
     backgroundColor: state.backgroundColor,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    textAlign: 'center',
-    wordBreak: 'break-word',
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    textAlign: "center",
+    wordBreak: "break-word",
     width: `${state.width}px`,
     height: `${state.height}px`,
-  }
+  };
 
   if (isLayoutMode) {
     // レイアウトモードでは絶対配置を外す
-    return baseStyle
+    return baseStyle;
   } else {
     // 個別編集モードでは絶対配置と回転を追加
     return {
       ...baseStyle,
-      position: 'absolute',
-      left: '0px',
-      top: '0px',
+      position: "absolute",
+      left: "0px",
+      top: "0px",
       transform: `translate(${state.x}px, ${state.y}px) rotate(${state.angle}deg)`,
       zIndex: state.zIndex,
-    }
+    };
   }
-})
+});
 </script>
 
 <style scoped>

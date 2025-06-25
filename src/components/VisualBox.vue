@@ -8,7 +8,10 @@
     :style="elementStyle"
   >
     {{ props.state.content }}
-    <div v-if="props.isSelected && !props.isLayoutMode" class="rotate-handle"></div>
+    <div
+      v-if="props.isSelected && !props.isLayoutMode"
+      class="rotate-handle"
+    ></div>
   </div>
 
   <!-- コントロールパネル -->
@@ -21,6 +24,36 @@
       フォントサイズ: {{ fontSize }}px
       <input type="range" v-model.number="fontSize" min="10" max="72" />
     </label>
+
+    <label>
+      フォント:
+      <select v-model="fontFamily">
+        <option value="sans-serif">sans-serif</option>
+        <option value="serif">serif</option>
+        <option value="monospace">monospace</option>
+        <option value="cursive">cursive</option>
+      </select>
+    </label>
+
+    <label>
+      太さ:
+      <select v-model="fontWeight">
+        <option value="normal">normal</option>
+        <option value="bold">bold</option>
+        <option value="bolder">bolder</option>
+        <option value="lighter">lighter</option>
+      </select>
+    </label>
+
+    <label>
+      スタイル:
+      <select v-model="fontStyle">
+        <option value="normal">normal</option>
+        <option value="italic">italic</option>
+        <option value="oblique">oblique</option>
+      </select>
+    </label>
+
     <label>
       文字色:
       <input type="color" v-model="fontColor" />
@@ -49,71 +82,106 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, type CSSProperties } from 'vue'
-import type { ElementState } from '../types'
+import { ref, watch, computed, type CSSProperties } from "vue";
+import type { ElementState } from "../types";
 
 const props = defineProps<{
-  state: ElementState
-  isSelected: boolean
-  isLayoutMode: boolean
-}>()
+  state: ElementState;
+  isSelected: boolean;
+  isLayoutMode: boolean;
+}>();
 
 // 双方向バインド用ローカル refs
-const width    = ref(props.state.width)
-const height   = ref(props.state.height)
-const bgColor  = ref(props.state.backgroundColor || '#007acc')
-const fontSize = ref(props.state.fontSize ?? 16)
-const fontColor= ref(props.state.fontColor ?? '#000000')
-const x        = ref(props.state.x)
-const y        = ref(props.state.y)
+const width = ref(props.state.width);
+const height = ref(props.state.height);
+const bgColor = ref(props.state.backgroundColor || "#007acc");
+const fontSize = ref(props.state.fontSize ?? 16);
+const fontColor = ref(props.state.fontColor ?? "#000000");
+const x = ref(props.state.x);
+const y = ref(props.state.y);
+
+const fontFamily = ref(props.state.fontFamily ?? 'sans-serif')
+const fontWeight = ref(props.state.fontWeight ?? 'normal')
+const fontStyle  = ref(props.state.fontStyle  ?? 'normal')
+
+// state に反映
+watch(fontFamily, v => props.state.fontFamily = v)
+watch(fontWeight, v => props.state.fontWeight = v)
+watch(fontStyle,  v => props.state.fontStyle  = v)
 
 // コントロールの変化を state に反映
-watch(width,    v => props.state.width  = v)
-watch(height,   v => props.state.height = v)
-watch(bgColor,  v => props.state.backgroundColor = v)
-watch(fontSize, v => props.state.fontSize = v)
-watch(fontColor,v => props.state.fontColor = v)
-watch(x,        v => props.state.x = v)
-watch(y,        v => props.state.y = v)
+watch(width, (v) => (props.state.width = v));
+watch(height, (v) => (props.state.height = v));
+watch(bgColor, (v) => (props.state.backgroundColor = v));
+watch(fontSize, (v) => (props.state.fontSize = v));
+watch(fontColor, (v) => (props.state.fontColor = v));
+watch(x, (v) => (props.state.x = v));
+watch(y, (v) => (props.state.y = v));
 
 // state 側の変更をコントロールに反映
-watch(() => props.state.width,           v => width.value     = v)
-watch(() => props.state.height,          v => height.value    = v)
-watch(() => props.state.backgroundColor, v => bgColor.value   = v || '#007acc')
-watch(() => props.state.fontSize,        v => fontSize.value  = v)
-watch(() => props.state.fontColor,       v => fontColor.value = v)
-watch(() => props.state.x,               v => x.value         = v)
-watch(() => props.state.y,               v => y.value         = v)
+watch(
+  () => props.state.width,
+  (v) => (width.value = v)
+);
+watch(
+  () => props.state.height,
+  (v) => (height.value = v)
+);
+watch(
+  () => props.state.backgroundColor,
+  (v) => (bgColor.value = v || "#007acc")
+);
+watch(
+  () => props.state.fontSize,
+  (v) => (fontSize.value = v)
+);
+watch(
+  () => props.state.fontColor,
+  (v) => (fontColor.value = v)
+);
+watch(
+  () => props.state.x,
+  (v) => (x.value = v)
+);
+watch(
+  () => props.state.y,
+  (v) => (y.value = v)
+);
+
+
 
 // スタイル
 const elementStyle = computed((): CSSProperties => {
   const base: CSSProperties = {
-    display:        'flex',
-    justifyContent: 'center',
-    alignItems:     'center',
-    color:          props.state.fontColor,
-    fontSize:       `${props.state.fontSize}px`,
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    color: props.state.fontColor,
+    fontSize: `${props.state.fontSize}px`,
+    fontFamily: props.state.fontFamily, // ← 追加
+    fontWeight: props.state.fontWeight,
+    fontStyle:  props.state.fontStyle,
     backgroundColor: props.state.backgroundColor,
-    width:          `${props.state.width}px`,
-    height:         `${props.state.height}px`,
-    border:         'none',
-    borderRadius:   '4px',
-    cursor:         'pointer',
-    userSelect:     'none',
-    boxSizing:      'border-box',
-  }
+    width: `${props.state.width}px`,
+    height: `${props.state.height}px`,
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+    userSelect: "none",
+    boxSizing: "border-box",
+  };
   if (props.isLayoutMode) {
-    return base
+    return base;
   }
   return {
     ...base,
-    position:  'absolute',
-    left:      '0px',
-    top:       '0px',
+    position: "absolute",
+    left: "0px",
+    top: "0px",
     transform: `translate(${props.state.x}px, ${props.state.y}px) rotate(${props.state.angle}deg)`,
-    zIndex:    props.state.zIndex,
-  }
-})
+    zIndex: props.state.zIndex,
+  };
+});
 </script>
 
 <style scoped>

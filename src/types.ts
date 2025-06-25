@@ -18,7 +18,12 @@ export interface ElementState {
   // ★★★ テクスト関連のプロパティ ★★★
   fontSize?: number
   fontColor?: string
-  
+  /** 追加: フォントファミリー */
+  fontFamily?: string;
+  /** 追加：文字の太さ */
+  fontWeight?: string;
+  /** 追加：文字スタイル */
+  fontStyle?: string;
 
   // ★★★ 追加: 画像要素のためのプロパティ（オプション） ★★★
   src?: string;
