@@ -39,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, type CSSProperties } from 'vue'
 import type { ElementState } from '../types'
 
 const props = defineProps<{
@@ -71,7 +71,7 @@ function onSelect() {
 }
 
 // スタイル
-const elementStyle = computed(() => {
+const elementStyle = computed<CSSProperties>(() => {
   const base: Record<string, any> = {
     width:  `${props.state.width}px`,
     height: `${props.state.height}px`,
@@ -87,7 +87,7 @@ const elementStyle = computed(() => {
   } else {
     return {
       ...base,
-      position: 'absolute',
+      position: 'absolute' as CSSProperties['position'],
       left:   '0px',
       top:    '0px',
       transform: `translate(${props.state.x}px, ${props.state.y}px) rotate(${props.state.angle}deg)`,
