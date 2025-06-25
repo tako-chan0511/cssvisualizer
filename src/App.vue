@@ -31,6 +31,70 @@
           @select="selectElement"
           @clone="cloneElement"
         />
+        <!-- ★ レイアウトモード用ポップアップ -->
+        <!-- 右上ポップアップ -->
+        <div v-if="editMode === 'layout'" class="controls layout-popup">
+          <h3>Container</h3>
+          <label>
+            height: {{ flexState.containerHeight }}%
+            <input
+              type="range"
+              min="20"
+              max="100"
+              v-model.number="flexState.containerHeight"
+            />
+          </label>
+          <label>
+            direction:
+            <select v-model="flexState.direction">
+              <option>row</option>
+              <option>row-reverse</option>
+              <option>column</option>
+              <option>column-reverse</option>
+            </select>
+          </label>
+          <label>
+            justify-content:
+            <select v-model="flexState.justifyContent">
+              <option>flex-start</option>
+              <option>flex-end</option>
+              <option>center</option>
+              <option>space-between</option>
+              <option>space-around</option>
+              <option>space-evenly</option>
+            </select>
+          </label>
+          <label>
+            align-items:
+            <select v-model="flexState.alignItems">
+              <option>flex-start</option>
+              <option>flex-end</option>
+              <option>center</option>
+              <option>stretch</option>
+              <option>baseline</option>
+            </select>
+          </label>
+          <label>
+            flex-wrap:
+            <select v-model="flexState.flexWrap">
+              <option>nowrap</option>
+              <option>wrap</option>
+              <option>wrap-reverse</option>
+            </select>
+          </label>
+          <label>
+            gap: {{ flexState.gap }}px
+            <input
+              type="range"
+              min="0"
+              max="50"
+              v-model.number="flexState.gap"
+            />
+          </label>
+
+          <h3>CSS</h3>
+          <textarea readonly rows="6">{{ generatedLayoutCss }}</textarea>
+        </div>
       </div>
     </div>
     <!-- 右側のコード表示エリア -->
@@ -51,6 +115,12 @@
       </div>
 
       <div class="css-panel-wrapper">
+        <div class="css-panel" v-show="editMode === 'layout'">
+          <h2>Container CSS (#sandbox)</h2>
+          <textarea readonly id="css-output-layout">{{
+            generatedLayoutCss
+          }}</textarea>
+        </div>
         <div class="css-panel" v-show="editMode === 'individual'">
           <h2>Selected Element CSS</h2>
           <!-- 背景色コントロールの追加 -->
@@ -69,7 +139,7 @@
           ></textarea>
         </div>
 
-        <div class="css-panel" v-show="editMode === 'layout'">
+        <!-- <div class="css-panel" v-show="editMode === 'layout'">
           <h2>Container CSS (#sandbox)</h2>
           <div class="layout-controls">
             <div class="control-group">
@@ -134,7 +204,7 @@
           <pre
             id="css-output-layout"
           ><code>{{ generatedLayoutCss }}</code></pre>
-        </div>
+        </div> -->
       </div>
 
       <div class="button-area">
@@ -178,7 +248,7 @@ const selectedElementId = ref<string | null>(null);
  * elements 配列から該当要素オブジェクトそのものを返す computed
  */
 const selectedElement = computed<ElementState | null>(() => {
-  return elements.value.find(e => e.id === selectedElementId.value) || null;
+  return elements.value.find((e) => e.id === selectedElementId.value) || null;
 });
 // 追加 end ◀
 
@@ -246,7 +316,9 @@ const generatedIndividualCss = computed(() => {
     height: ${height.toFixed(1)}px;
     background-color: ${backgroundColor || "#ffffff"};
     z-index: ${zIndex};
-    transform: translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${angle.toFixed(1)}deg);
+    transform: translate(${x.toFixed(1)}px, ${y.toFixed(
+    1
+  )}px) rotate(${angle.toFixed(1)}deg);
   }`;
 
   // テキスト要素の場合のみ文字関連のプロパティを追加
@@ -254,8 +326,8 @@ const generatedIndividualCss = computed(() => {
     css = css.replace(
       /\}$/,
       `    color: ${fontColor || "#000000"};\n` +
-      `    font-size: ${fontSize?.toFixed(1) || 16}px;\n` +
-      `}`
+        `    font-size: ${fontSize?.toFixed(1) || 16}px;\n` +
+        `}`
     );
   }
 
@@ -265,17 +337,16 @@ const generatedIndividualCss = computed(() => {
     css = css.replace(
       /\}$/,
       `    color: ${fontColor || "#000000"};\n` +
-      `    font-size: ${fontSize?.toFixed(1) || 16}px;\n` +
-      `    border: none;\n` +
-      `    border-radius: 4px;\n` +
-      `    padding: 8px 16px;\n` +
-      `}`
+        `    font-size: ${fontSize?.toFixed(1) || 16}px;\n` +
+        `    border: none;\n` +
+        `    border-radius: 4px;\n` +
+        `    padding: 8px 16px;\n` +
+        `}`
     );
   }
 
   return css.trim();
 });
-
 
 const generatedLayoutCss = computed(() => {
   const code = `
@@ -308,7 +379,8 @@ const addElement = (
     content: `${type.toUpperCase()} ${elementCounter}`,
     zIndex: elementCounter,
     // ★★★ 追加：必ず背景色を初期化 ★★★
-    backgroundColor: type === 'box' ? '#6dd5ed' /* 水色グラデ調のスタート色 */ : undefined,
+    backgroundColor:
+      type === "box" ? "#6dd5ed" /* 水色グラデ調のスタート色 */ : undefined,
   };
 
   if (type === "text") {
@@ -742,5 +814,42 @@ body {
 }
 .delete-button:hover {
   background-color: #d32f2f;
+}
+/* ポップアップを右上に固定 */
+.controls.layout-popup {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 260px;
+  max-height: calc(100% - 32px);
+  overflow-y: auto;
+  background: #fafafa;
+  border: 1px solid #ddd;
+  padding: 12px;
+  border-radius: 6px;
+  z-index: 1000;
+  font-size: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.controls.layout-popup h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: bold;
+}
+.controls.layout-popup label {
+  display: block;
+  margin-bottom: 10px;
+}
+.controls.layout-popup input,
+.controls.layout-popup select,
+.controls.layout-popup textarea {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 4px;
+}
+.controls.layout-popup textarea {
+  font-family: monospace;
+  height: 80px;
+  resize: none;
 }
 </style>
