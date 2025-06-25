@@ -288,8 +288,7 @@ const sandboxStyle = computed((): CSSProperties => {
   return { height: "100%" };
 });
 
-// 個別要素のCSSコードを生成するcomputed （フォントサイズ・文字色も追加）
-// 個別要素のCSSコードを生成するcomputed （フォントサイズ・文字色も追加）
+// 個別要素のCSSコードを生成するcomputed （フォント関連もBOX/ボタンに追加）
 const generatedIndividualCss = computed(() => {
   if (!selectedElement.value) {
     return "/* 要素をクリックして選択してください */";
@@ -306,6 +305,9 @@ const generatedIndividualCss = computed(() => {
     backgroundColor,
     fontSize,
     fontColor,
+    fontFamily,
+    fontWeight,
+    fontStyle,
     type,
   } = el;
 
@@ -316,37 +318,35 @@ const generatedIndividualCss = computed(() => {
     height: ${height.toFixed(1)}px;
     background-color: ${backgroundColor || "#ffffff"};
     z-index: ${zIndex};
-    transform: translate(${x.toFixed(1)}px, ${y.toFixed(
-    1
-  )}px) rotate(${angle.toFixed(1)}deg);
+    transform: translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${angle.toFixed(1)}deg);
   }`;
 
-  // テキスト要素の場合のみ文字関連のプロパティを追加
-  if (type === "text") {
-    css = css.replace(
-      /\}$/,
-      `    color: ${fontColor || "#000000"};\n` +
-        `    font-size: ${fontSize?.toFixed(1) || 16}px;\n` +
-        `}`
-    );
-  }
+  // BOX / TEXT / BUTTON に対してフォント系プロパティを追加
+  if (type === "box" || type === "text" || type === "button") {
+    // 挿入する文字系CSS
+    let fontCss = 
+      `    color: ${fontColor   || "#000000"};\n` +
+      `    font-size: ${fontSize?.toFixed(1) || 16}px;\n` +
+      `    font-family: ${fontFamily || "sans-serif"};\n` +
+      `    font-weight: ${fontWeight || "normal"};\n` +
+      `    font-style: ${fontStyle || "normal"};\n`;
 
-  // ボタン要素の場合のみボタン独自のプロパティを追加
-  if (type === "button") {
-    // すでに閉じカッコ } があるので最後の } の直前に挿入
-    css = css.replace(
-      /\}$/,
-      `    color: ${fontColor || "#000000"};\n` +
-        `    font-size: ${fontSize?.toFixed(1) || 16}px;\n` +
+    // ボタンだけはさらにボタン固有スタイルも追加
+    if (type === "button") {
+      fontCss +=
         `    border: none;\n` +
         `    border-radius: 4px;\n` +
-        `    padding: 8px 16px;\n` +
-        `}`
-    );
+        `    padding: 8px 16px;\n`;
+    }
+
+    // 最後の'}'の直前にまとめて挿入
+    css = css.replace(/\}$/, fontCss + `}`);
   }
 
   return css.trim();
 });
+
+
 
 const generatedLayoutCss = computed(() => {
   const code = `
@@ -381,6 +381,11 @@ const addElement = (
     // ★★★ 追加：必ず背景色を初期化 ★★★
     backgroundColor:
       type === "box" ? "#6dd5ed" /* 水色グラデ調のスタート色 */ : undefined,
+    fontSize: 16,
+    fontColor: "#000000",
+    fontFamily: "sans-serif", // ← 追加
+    fontWeight: "normal",
+    fontStyle: "normal",
   };
 
   if (type === "text") {
@@ -829,7 +834,7 @@ body {
   border-radius: 6px;
   z-index: 1000;
   font-size: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 .controls.layout-popup h3 {
   margin: 0 0 8px;
