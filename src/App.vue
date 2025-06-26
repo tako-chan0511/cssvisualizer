@@ -139,20 +139,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, reactive, watch, type CSSProperties } from 'vue';
+import { ref, computed, reactive, watch, onMounted, nextTick, type CSSProperties } from 'vue';
+import interact from 'interactjs';
 import VisualBox from './components/VisualBox.vue';
 import VisualCircle from './components/VisualCircle.vue';
 import VisualText from './components/VisualText.vue';
 import VisualImage from './components/VisualImage.vue';
 import VisualButton from './components/VisualButton.vue';
+import { useElements } from './composables/useElements';
 import type { ElementState } from './types';
-import interact from 'interactjs';
 
-const elements = ref<ElementState[]>([]);
-const selectedElementId = ref<string | null>(null);
-const selectedElement = computed<ElementState | null>(() => elements.value.find(e => e.id === selectedElementId.value) || null);
+const {
+   elements,
+   selectedElementId,
+   selectedElement,
+   addElement,
+   selectElement,
+   deselectAll,
+   handleElementUpdate,
+   cloneElement,
+   deleteSelectedElement
+ } = useElements();
 
-const sandboxRef = ref<HTMLElement | null>(null);
+ const sandboxRef = ref<HTMLElement | null>(null);
 let elementCounter = 0;
 const editMode = ref<'individual'|'layout'>('individual');
 
@@ -262,88 +271,88 @@ const generatedLayoutCss = computed(() => {
 })
 
 
-const addElement = (
-  type: ElementState["type"],
-  initialState: Partial<ElementState> = {}
-) => {
-  const sandboxRect = sandboxRef.value?.getBoundingClientRect();
-  elementCounter++;
-  const id = `${type}-${elementCounter}`;
+// const addElement = (
+//   type: ElementState["type"],
+//   initialState: Partial<ElementState> = {}
+// ) => {
+//   const sandboxRect = sandboxRef.value?.getBoundingClientRect();
+//   elementCounter++;
+//   const id = `${type}-${elementCounter}`;
 
-  const defaults = {
-    x: sandboxRect ? sandboxRect.width / 2 - 75 : 100,
-    y: sandboxRect ? sandboxRect.height / 2 - 75 : 100,
-    width: 150,
-    height: 150,
-    angle: 0,
-    content: `${type.toUpperCase()} ${elementCounter}`,
-    zIndex: elementCounter,
-    // ★★★ 追加：必ず背景色を初期化 ★★★
-    backgroundColor:
-      type === "box" ? "#6dd5ed" /* 水色グラデ調のスタート色 */ : undefined,
-    fontSize: 16,
-    fontColor: "#000000",
-    fontFamily: "sans-serif", // ← 追加
-    fontWeight: "normal",
-    fontStyle: "normal",
-  };
+//   const defaults = {
+//     x: sandboxRect ? sandboxRect.width / 2 - 75 : 100,
+//     y: sandboxRect ? sandboxRect.height / 2 - 75 : 100,
+//     width: 150,
+//     height: 150,
+//     angle: 0,
+//     content: `${type.toUpperCase()} ${elementCounter}`,
+//     zIndex: elementCounter,
+//     // ★★★ 追加：必ず背景色を初期化 ★★★
+//     backgroundColor:
+//       type === "box" ? "#6dd5ed" /* 水色グラデ調のスタート色 */ : undefined,
+//     fontSize: 16,
+//     fontColor: "#000000",
+//     fontFamily: "sans-serif", // ← 追加
+//     fontWeight: "normal",
+//     fontStyle: "normal",
+//   };
 
-  if (type === "text") {
-    defaults.height = 50;
-    defaults.content = "テキスト要素";
-  }
-  if (type === "button") {
-    defaults.height = 60;
-    defaults.content = "ボタン";
-  }
-  if (type === "image") {
-    defaults.content = ""; // 画像にはテキストは不要
-  }
+//   if (type === "text") {
+//     defaults.height = 50;
+//     defaults.content = "テキスト要素";
+//   }
+//   if (type === "button") {
+//     defaults.height = 60;
+//     defaults.content = "ボタン";
+//   }
+//   if (type === "image") {
+//     defaults.content = ""; // 画像にはテキストは不要
+//   }
 
-  const newElement: ElementState = {
-    id,
-    type,
-    ...defaults,
-    ...initialState,
-    src:
-      type === "image"
-        ? "https://placehold.co/600x400/EEE/31343C?text=Image"
-        : undefined,
-  };
-  elements.value.push(newElement);
-  selectElement(id);
-};
+//   const newElement: ElementState = {
+//     id,
+//     type,
+//     ...defaults,
+//     ...initialState,
+//     src:
+//       type === "image"
+//         ? "https://placehold.co/600x400/EEE/31343C?text=Image"
+//         : undefined,
+//   };
+//   elements.value.push(newElement);
+//   selectElement(id);
+// };
 
-const selectElement = (id: string | null) => {
-  selectedElementId.value = id;
-};
+// const selectElement = (id: string | null) => {
+//   selectedElementId.value = id;
+// };
 
-const deselectAll = () => {
-  if (editMode.value === "individual") {
-    selectedElementId.value = null;
-  }
-};
+// const deselectAll = () => {
+//   if (editMode.value === "individual") {
+//     selectedElementId.value = null;
+//   }
+// };
 
-const handleElementUpdate = (newState: ElementState) => {
-  const index = elements.value.findIndex((b) => b.id === newState.id);
-  if (index !== -1) {
-    elements.value[index] = newState;
-  }
-};
+// const handleElementUpdate = (newState: ElementState) => {
+//   const index = elements.value.findIndex((b) => b.id === newState.id);
+//   if (index !== -1) {
+//     elements.value[index] = newState;
+//   }
+// };
 
-// 複製するときは x/y とサイズ・回転だけ受け渡し。
-// id と content は addElement() 側で再生成させる
-const cloneElement = (originalState: ElementState) => {
-  addElement(originalState.type, {
-    // 移動だけコピー
-    x: originalState.x + 20,
-    y: originalState.y + 20,
-    // 必要ならサイズや回転もコピーしたい場合はここに足す：
-    width: originalState.width,
-    height: originalState.height,
-    angle: originalState.angle,
-  });
-};
+// // 複製するときは x/y とサイズ・回転だけ受け渡し。
+// // id と content は addElement() 側で再生成させる
+// const cloneElement = (originalState: ElementState) => {
+//   addElement(originalState.type, {
+//     // 移動だけコピー
+//     x: originalState.x + 20,
+//     y: originalState.y + 20,
+//     // 必要ならサイズや回転もコピーしたい場合はここに足す：
+//     width: originalState.width,
+//     height: originalState.height,
+//     angle: originalState.angle,
+//   });
+// };
 
 const setEditMode = (mode: "individual" | "layout") => {
   editMode.value = mode;
@@ -391,16 +400,16 @@ const copyCss = () => {
   navigator.clipboard.writeText(codeToCopy);
 };
 
-const deleteSelectedElement = () => {
-  if (!selectedElementId.value) return;
-  const index = elements.value.findIndex(
-    (b) => b.id === selectedElementId.value
-  );
-  if (index !== -1) {
-    elements.value.splice(index, 1);
-    deselectAll();
-  }
-};
+// const deleteSelectedElement = () => {
+//   if (!selectedElementId.value) return;
+//   const index = elements.value.findIndex(
+//     (b) => b.id === selectedElementId.value
+//   );
+//   if (index !== -1) {
+//     elements.value.splice(index, 1);
+//     deselectAll();
+//   }
+// };
 
 const initializeInteract = () => {
   interact(".visual-element").unset();
