@@ -6,7 +6,7 @@
     class="visual-element button"
     :class="{ selected: props.isSelected }"
     :style="elementStyle"
-    @mousedown.stop="onSelectIfIndividual"
+    @mousedown.stop="onSelect"
   >
     {{ props.state.content }}
     <div
@@ -90,6 +90,11 @@ const props = defineProps<{
   state: ElementState;
   isSelected: boolean;
   isLayoutMode: boolean;
+}>();
+// ── 選択イベントをエミットするための準備 ──
+const emit = defineEmits<{
+  (e: 'select', id: string): void;
+  (e: 'update', newState: ElementState): void;
 }>();
 
 // 双方向バインド用ローカル refs
@@ -183,6 +188,14 @@ const elementStyle = computed((): CSSProperties => {
     zIndex: props.state.zIndex,
   };
 });
+// ── 選択用ハンドラ ──
+function onSelect(event: MouseEvent) {
+  event.stopPropagation();
+  // レイアウトモード時は選択を無効化
+  if (!props.isLayoutMode) {
+    emit('select', props.state.id);
+  }
+}
 </script>
 
 <style scoped>
