@@ -6,6 +6,7 @@
         <b>操作方法:</b> 要素をクリックで選択。Alt/Option + ドラッグで複写。<br />
         選択中の要素は角のハンドルで回転。削除ボタンで削除できます。
       </div>
+      <!-- ▼ ツールバー ▼ -->
       <div class="toolbar">
         <button @click="addElement('box')">ボックス追加</button>
         <button @click="addElement('circle')">円を追加</button>
@@ -13,28 +14,31 @@
         <button @click="addElement('image')">画像追加</button>
         <button @click="addElement('button')">ボタン追加</button>
       </div>
+      <!-- ▲ ツールバー ▲ -->
+
+      <!-- ▼ サンドボックス本体 ▼ -->
       <div
         id="sandbox"
         ref="sandboxRef"
         @click.self="deselectAll"
         :style="sandboxStyle"
       >
-        <!-- 動的コンポーネントで要素を描画 -->
+        <!-- 各要素を描画 -->
         <component
-          v-for="element in elements"
-          :key="element.id"
-          :is="componentMap[element.type]"
-          :state="element"
-          :is-selected="selectedElementId === element.id"
+          v-for="el in elements"
+          :key="el.id"
+          :is="componentMap[el.type]"
+          :state="el"
+          :is-selected="selectedElementId === el.id"
           :is-layout-mode="editMode === 'layout'"
-          @update="handleElementUpdate"
           @select="selectElement"
+          @update="handleElementUpdate"
           @clone="cloneElement"
         />
-        <!-- ★ レイアウトモード用ポップアップ -->
+
+        <!-- レイアウトモード用ポップアップ -->
         <div v-if="editMode === 'layout'" class="controls layout-popup">
           <h3>Container</h3>
-          <!-- レイアウト方式切替 -->
           <label>
             レイアウト方式:
             <select v-model="layoutSystem">
@@ -42,243 +46,184 @@
               <option value="grid">CSS Grid</option>
             </select>
           </label>
+
           <!-- Flex モード -->
-          <template v-if="layoutSystem === 'flex'">
-            <label>height: {{ flexState.containerHeight }}%
+          <template v-if="layoutSystem==='flex'">
+            <label>
+              height: {{ flexState.containerHeight }}%
               <input type="range" min="20" max="100" v-model.number="flexState.containerHeight" />
             </label>
-            <label>direction:
+            <label>
+              direction:
               <select v-model="flexState.direction">
-                <option>row</option>
-                <option>row-reverse</option>
-                <option>column</option>
-                <option>column-reverse</option>
+                <option>row</option><option>row-reverse</option>
+                <option>column</option><option>column-reverse</option>
               </select>
             </label>
-            <label>justify-content:
+            <label>
+              justify-content:
               <select v-model="flexState.justifyContent">
-                <option>flex-start</option>
-                <option>flex-end</option>
-                <option>center</option>
-                <option>space-between</option>
-                <option>space-around</option>
-                <option>space-evenly</option>
+                <option>flex-start</option><option>flex-end</option>
+                <option>center</option><option>space-between</option>
+                <option>space-around</option><option>space-evenly</option>
               </select>
             </label>
-            <label>align-items:
+            <label>
+              align-items:
               <select v-model="flexState.alignItems">
-                <option>flex-start</option>
-                <option>flex-end</option>
-                <option>center</option>
-                <option>stretch</option>
+                <option>flex-start</option><option>flex-end</option>
+                <option>center</option><option>stretch</option>
                 <option>baseline</option>
               </select>
             </label>
-            <label>flex-wrap:
+            <label>
+              flex-wrap:
               <select v-model="flexState.flexWrap">
-                <option>nowrap</option>
-                <option>wrap</option>
-                <option>wrap-reverse</option>
+                <option>nowrap</option><option>wrap</option><option>wrap-reverse</option>
               </select>
             </label>
-            <label>gap: {{ flexState.gap }}px
+            <label>
+              gap: {{ flexState.gap }}px
               <input type="range" min="0" max="50" v-model.number="flexState.gap" />
             </label>
           </template>
+
           <!-- Grid モード -->
           <template v-else>
-            <label>grid-template-columns:
+            <label>
+              grid-template-columns:
               <input type="text" v-model="gridState.columns" placeholder="1fr 1fr 1fr" />
             </label>
-            <label>grid-template-rows:
+            <label>
+              grid-template-rows:
               <input type="text" v-model="gridState.rows" placeholder="auto auto" />
             </label>
-            <!-- <label>gap: {{ gridState.gap }}px
-              <input type="range" min="0" max="50" v-model.number="gridState.gap" />
-            </label> -->
-            <label>row-gap: {{ gridState.rowGap }}px
+            <label>
+              row-gap: {{ gridState.rowGap }}px
               <input type="range" min="0" max="50" v-model.number="gridState.rowGap" />
             </label>
-            <label>column-gap: {{ gridState.columnGap }}px
+            <label>
+              column-gap: {{ gridState.columnGap }}px
               <input type="range" min="0" max="50" v-model.number="gridState.columnGap" />
             </label>
           </template>
+
           <h3>CSS</h3>
           <textarea readonly rows="6">{{ generatedLayoutCss }}</textarea>
         </div>
       </div>
+      <!-- ▲ サンドボックス本体 ▲ -->
     </div>
+
     <!-- 右側のコード表示エリア -->
     <div class="code-container">
       <div class="mode-tabs">
-        <button :class="{ active: editMode === 'individual' }" @click="setEditMode('individual')">個別編集</button>
-        <button :class="{ active: editMode === 'layout' }" @click="setEditMode('layout')">レイアウト</button>
+        <button :class="{ active: editMode==='individual' }" @click="setEditMode('individual')">
+          個別編集
+        </button>
+        <button :class="{ active: editMode==='layout' }" @click="setEditMode('layout')">
+          レイアウト
+        </button>
       </div>
 
       <div class="css-panel-wrapper">
-        <div class="css-panel" v-show="editMode === 'layout'">
+        <div class="css-panel" v-show="editMode==='layout'">
           <h2>Container CSS (#sandbox)</h2>
           <textarea readonly id="css-output-layout">{{ generatedLayoutCss }}</textarea>
         </div>
-        <div class="css-panel" v-show="editMode === 'individual'">
+        <div class="css-panel" v-show="editMode==='individual'">
           <h2>Selected Element CSS</h2>
           <div class="control-group">
             <label>背景色</label>
             <input type="color" v-if="selectedElement" v-model="selectedElement.backgroundColor" />
           </div>
-          <textarea id="css-output-individual" :value="generatedIndividualCss" @input="updateElementFromCss"></textarea>
+          <textarea
+            id="css-output-individual"
+            :value="generatedIndividualCss"
+            @input="updateElementFromCss"
+          ></textarea>
         </div>
       </div>
 
       <div class="button-area">
         <button class="copy-button" @click="copyCss">コードをコピー</button>
-        <button v-if="editMode === 'individual' && selectedElementId" class="delete-button" @click="deleteSelectedElement">選択中の要素を削除</button>
+        <button
+          v-if="editMode==='individual' && selectedElementId"
+          class="delete-button"
+          @click="deleteSelectedElement"
+        >
+          選択中の要素を削除
+        </button>
       </div>
     </div>
   </div>
 </template>
 
+
 <script setup lang="ts">
-import { ref, computed, reactive, watch, onMounted, nextTick, type CSSProperties } from 'vue';
-import interact from 'interactjs';
-import VisualBox from './components/VisualBox.vue';
-import VisualCircle from './components/VisualCircle.vue';
-import VisualText from './components/VisualText.vue';
-import VisualImage from './components/VisualImage.vue';
-import VisualButton from './components/VisualButton.vue';
-import { useElements } from './composables/useElements';
-import type { ElementState } from './types';
-import { useLayout } from '@/composables/useLayout';
+import { ref, computed, reactive, watch, onMounted, nextTick, type CSSProperties } from 'vue'
+import interact from 'interactjs'
+import { useElements } from './composables/useElements'
+import { useLayout }   from './composables/useLayout'
+import { useCssGenerator } from './composables/useCssGenerator'
+import type { ElementState } from './types'
+import VisualBox    from './components/VisualBox.vue'
+import VisualCircle from './components/VisualCircle.vue'
+import VisualText   from './components/VisualText.vue'
+import VisualImage  from './components/VisualImage.vue'
+import VisualButton from './components/VisualButton.vue'
 
+const componentMap = {
+  box:    VisualBox,
+  circle: VisualCircle,
+  text:   VisualText,
+  image:  VisualImage,
+  button: VisualButton,
+}
+// ──────── ① editMode をいちばん上で宣言 ────────
+const editMode = ref<'individual' | 'layout'>('individual')
+
+// ──────── ② useElements で要素操作ロジック ────────
 const {
-   elements,
-   selectedElementId,
-   selectedElement,
-   addElement,
-   selectElement,
-   deselectAll,
-   handleElementUpdate,
-   cloneElement,
-   deleteSelectedElement
- } = useElements();
+  elements,
+  selectedElementId,
+  selectedElement,
+  addElement,
+  selectElement,
+  deselectAll,
+  handleElementUpdate,
+  cloneElement,
+  deleteSelectedElement
+} = useElements()
 
- const { layoutSystem, flexState, gridState, sandboxStyle, generatedLayoutCss } = useLayout();
+// ──────── ③ useLayout を呼んで、grid/flex と CSS 生成 ────────
+//     → ここで generatedLayoutCss も受け取る
+const {
+  layoutSystem,
+  flexState,
+  gridState,
+  sandboxStyle,
+  generatedLayoutCss
+} = useLayout()
 
- const sandboxRef = ref<HTMLElement | null>(null);
-let elementCounter = 0;
-const editMode = ref<'individual'|'layout'>('individual');
-
-
-
-const componentMap:Record<string,any> = { box:VisualBox, circle:VisualCircle, text:VisualText, image:VisualImage, button:VisualButton };
-
-
-
-// 個別要素のCSSコードを生成するcomputed （フォント関連もBOX/ボタンに追加）
-const generatedIndividualCss = computed(() => {
-  if (!selectedElement.value) {
-    return "/* 要素をクリックして選択してください */";
-  }
-  const el = selectedElement.value;
-  const {
-    id,
-    width,
-    height,
-    x,
-    y,
-    angle,
-    zIndex,
-    backgroundColor,
-    fontSize,
-    fontColor,
-    fontFamily,
-    fontWeight,
-    fontStyle,
-    type,
-  } = el;
-
-  // 基本のCSSを作成
-  let css = `#${id} {
-    position: absolute;
-    width: ${width.toFixed(1)}px;
-    height: ${height.toFixed(1)}px;
-    background-color: ${backgroundColor || "#ffffff"};
-    z-index: ${zIndex};
-    transform: translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${angle.toFixed(1)}deg);
-  }`;
-
-  // BOX / TEXT / BUTTON に対してフォント系プロパティを追加
-  if (type === "box" || type === "text" || type === "button" || type === "circle") {
-    // 挿入する文字系CSS
-    let fontCss = 
-      `    color: ${fontColor   || "#000000"};\n` +
-      `    font-size: ${fontSize?.toFixed(1) || 16}px;\n` +
-      `    font-family: ${fontFamily || "sans-serif"};\n` +
-      `    font-weight: ${fontWeight || "normal"};\n` +
-      `    font-style: ${fontStyle || "normal"};\n`;
-
-    // ボタンだけはさらにボタン固有スタイルも追加
-    if (type === "button") {
-      fontCss +=
-        `    border: none;\n` +
-        `    border-radius: 4px;\n` +
-        `    padding: 8px 16px;\n`;
-    }
-
-    // 最後の'}'の直前にまとめて挿入
-    css = css.replace(/\}$/, fontCss + `}`);
-  }
-
-  return css.trim();
-});
-
+// ──────── ④ useCssGenerator で個別要素用の CSS 生成 ────────
+const {
+  generatedIndividualCss,
+  updateElementFromCss,
+  copyCss
+} = useCssGenerator(
+  elements,
+  selectedElementId,
+  editMode,      // ← 先に宣言しておいた editMode を渡す
+  flexState,
+  gridState,
+  layoutSystem
+)
 
 const setEditMode = (mode: "individual" | "layout") => {
   editMode.value = mode;
-  if (mode === "layout") {
-    deselectAll();
-  }
+  if (mode === "layout") deselectAll();
 };
-
-const updateElementFromCss = (event: Event) => {
-  const target = event.target as HTMLTextAreaElement;
-  const cssText = target.value;
-  const selectedElement = elements.value.find(
-    (b) => b.id === selectedElementId.value
-  );
-  if (!selectedElement) return;
-  try {
-    const widthMatch = cssText.match(/width:\s*(\d*\.?\d+)/);
-    const heightMatch = cssText.match(/height:\s*(\d*\.?\d+)/);
-    const zIndexMatch = cssText.match(/z-index:\s*(\d+)/);
-    const translateMatch = cssText.match(
-      /translate\(\s*(-?\d*\.?\d+)px,\s*(-?\d*\.?\d+)px\)/
-    );
-    const rotateMatch = cssText.match(/rotate\(\s*(-?\d*\.?\d+)deg\)/);
-    const updates: Partial<ElementState> = {};
-    if (widthMatch) updates.width = parseFloat(widthMatch[1]);
-    if (heightMatch) updates.height = parseFloat(heightMatch[1]);
-    if (zIndexMatch) updates.zIndex = parseInt(zIndexMatch[1], 10);
-    if (translateMatch) {
-      updates.x = parseFloat(translateMatch[1]);
-      updates.y = parseFloat(translateMatch[2]);
-    }
-    if (rotateMatch) updates.angle = parseFloat(rotateMatch[1]);
-    Object.assign(selectedElement, updates);
-  } catch (e) {
-    console.error("CSSの解析に失敗しました:", e);
-  }
-};
-
-const copyCss = () => {
-  const codeToCopy =
-    editMode.value === "individual"
-      ? generatedIndividualCss.value
-      : generatedLayoutCss.value;
-  if (codeToCopy.startsWith("/*")) return;
-  navigator.clipboard.writeText(codeToCopy);
-};
-
 
 const initializeInteract = () => {
   interact(".visual-element").unset();
@@ -295,20 +240,18 @@ const initializeInteract = () => {
       listeners: {
         start(event) {
           if (event.altKey) {
-            const originalElement = elements.value.find(
-              (b) => b.id === event.target.id
-            );
-            if (originalElement) cloneElement({ ...originalElement });
+            const orig = elements.value.find((e) => e.id === event.target.id);
+            if (orig) cloneElement({ ...orig });
             event.interaction.stop();
           }
         },
         move(event) {
-          const element = elements.value.find((b) => b.id === event.target.id);
-          if (element) {
+          const el = elements.value.find((e) => e.id === event.target.id);
+          if (el) {
             handleElementUpdate({
-              ...element,
-              x: element.x + event.dx,
-              y: element.y + event.dy,
+              ...el,
+              x: el.x + event.dx,
+              y: el.y + event.dy,
             });
           }
         },
@@ -316,21 +259,19 @@ const initializeInteract = () => {
       modifiers: [interact.modifiers.restrictRect({ restriction: "parent" })],
     })
     .resizable({
-      edges: { left: true, right: true, bottom: true, top: true },
+      edges: { left: true, right: true, top: true, bottom: true },
       listeners: {
         move(event) {
-          const element = elements.value.find((b) => b.id === event.target.id);
-          if (element) {
+          const el = elements.value.find((e) => e.id === event.target.id);
+          if (el) {
             const updates: Partial<ElementState> = {
               width: event.rect.width,
               height: event.rect.height,
-              x: element.x + event.deltaRect.left,
-              y: element.y + event.deltaRect.top,
+              x: el.x + event.deltaRect.left,
+              y: el.y + event.deltaRect.top,
             };
-            if (element.type === "circle") {
-              updates.height = event.rect.width;
-            }
-            handleElementUpdate({ ...element, ...updates });
+            if (el.type === "circle") updates.height = event.rect.width;
+            handleElementUpdate({ ...el, ...updates });
           }
         },
       },
@@ -341,26 +282,27 @@ const initializeInteract = () => {
     });
 
   interact(".rotate-handle").draggable({
-    onstart: function (event) {
-      const boxElement = (event.target as HTMLElement).parentElement!;
-      const rect = boxElement.getBoundingClientRect();
+    onstart(event) {
+      const box = (event.target as HTMLElement).parentElement!;
+      const rect = box.getBoundingClientRect();
       // @ts-ignore
       event.interaction.boxCenterX = rect.left + rect.width / 2;
       // @ts-ignore
       event.interaction.boxCenterY = rect.top + rect.height / 2;
     },
-    onmove: function (event) {
-      const boxElement = (event.target as HTMLElement).parentElement!;
-      const element = elements.value.find((b) => b.id === boxElement.id);
-      if (element) {
-        const angle = Math.atan2(
-          event.clientY - event.interaction.boxCenterY,
-          event.clientX - event.interaction.boxCenterX
-        );
-        handleElementUpdate({
-          ...element,
-          angle: angle * (180 / Math.PI) + 90,
-        });
+    onmove(event) {
+      const box = (event.target as HTMLElement).parentElement!;
+      const el = elements.value.find((e) => e.id === box.id);
+      if (el) {
+        const angle =
+          (Math.atan2(
+            event.clientY - event.interaction.boxCenterY,
+            event.clientX - event.interaction.boxCenterX
+          ) *
+            180) /
+            Math.PI +
+          90;
+        handleElementUpdate({ ...el, angle });
       }
     },
   });
@@ -368,18 +310,18 @@ const initializeInteract = () => {
 
 onMounted(() => {
   nextTick(() => {
-    // addElement("box");
+    // addElement("box") などデフォルト追加が不要ならコメントアウト
     selectElement(null);
   });
   initializeInteract();
 
   watch(
     editMode,
-    (newValue) => {
-      const isIndividual = newValue === "individual";
-      interact(".visual-element").draggable({ enabled: isIndividual });
-      interact(".visual-element").resizable({ enabled: isIndividual });
-      interact(".rotate-handle").draggable({ enabled: isIndividual });
+    (mode) => {
+      const enabled = mode === "individual";
+      interact(".visual-element").draggable({ enabled });
+      interact(".visual-element").resizable({ enabled });
+      interact(".rotate-handle").draggable({ enabled });
     },
     { immediate: true }
   );
@@ -636,10 +578,18 @@ body {
   resize: none;
 }
 .controls.layout-popup {
-  position:fixed; top:16px; right:16px; width:260px;
-  max-height:calc(100%-32px); overflow-y:auto;
-  background:#fafafa; border:1px solid #ddd; padding:12px;
-  border-radius:6px; z-index:1000; font-size:12px;
-  box-shadow:0 2px 8px rgba(0,0,0,0.15);
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 260px;
+  max-height: calc(100%-32px);
+  overflow-y: auto;
+  background: #fafafa;
+  border: 1px solid #ddd;
+  padding: 12px;
+  border-radius: 6px;
+  z-index: 1000;
+  font-size: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 </style>
