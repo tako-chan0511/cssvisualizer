@@ -127,22 +127,39 @@
       </div>
 
       <div class="css-panel-wrapper">
-        <div class="css-panel" v-show="editMode==='layout'">
-          <h2>Container CSS (#sandbox)</h2>
-          <textarea readonly id="css-output-layout">{{ generatedLayoutCss }}</textarea>
-        </div>
-        <div class="css-panel" v-show="editMode==='individual'">
-          <h2>Selected Element CSS</h2>
-          <div class="control-group">
-            <label>背景色</label>
-            <input type="color" v-if="selectedElement" v-model="selectedElement.backgroundColor" />
-          </div>
-          <textarea
-            id="css-output-individual"
-            :value="generatedIndividualCss"
-            @input="updateElementFromCss"
-          ></textarea>
-        </div>
+       <!-- 一つのパネルにまとめて、ヘッダーと中身を切り替える -->
+       <div class="css-panel">
+         <h2>
+           {{ editMode === 'individual'
+               ? 'Selected Element CSS'
+               : 'Container CSS (#sandbox)' }}
+         </h2>
+
+         <!-- 個別編集モードの中身 -->
+         <template v-if="editMode === 'individual'">
+           <div class="control-group">
+             <label>背景色</label>
+             <input
+               type="color"
+               v-if="selectedElement"
+               v-model="selectedElement.backgroundColor"
+             />
+           </div>
+           <textarea
+             id="css-output-individual"
+             :value="generatedIndividualCss"
+             @input="updateElementFromCss"
+           ></textarea>
+         </template>
+
+         <!-- レイアウトモードの中身 -->
+         <template v-else>
+           <textarea
+             id="css-output-layout"
+             readonly
+           >{{ generatedLayoutCss }}</textarea>
+         </template>
+       </div>
       </div>
 
       <div class="button-area">
@@ -163,6 +180,7 @@
 <script setup lang="ts">
 import { ref, computed, reactive, watch, onMounted, nextTick, type CSSProperties } from 'vue'
 import interact from 'interactjs'
+import { useInteract } from '@/composables/useInteract'
 import { useElements } from './composables/useElements'
 import { useLayout }   from './composables/useLayout'
 import { useCssGenerator } from './composables/useCssGenerator'
@@ -220,111 +238,28 @@ const {
   layoutSystem
 )
 
+// ② interact.js ロジックを composable に移譲
+useInteract({
+  elements,
+  editMode,
+  selectElement,
+  handleElementUpdate,
+  cloneElement,
+})
+
 const setEditMode = (mode: "individual" | "layout") => {
   editMode.value = mode;
   if (mode === "layout") deselectAll();
 };
 
-const initializeInteract = () => {
-  interact(".visual-element").unset();
-  interact(".rotate-handle").unset();
-
-  interact(".visual-element")
-    .on("down", (event) => {
-      if (editMode.value === "individual") {
-        selectElement(event.currentTarget.id);
-      }
-      event.stopPropagation();
-    })
-    .draggable({
-      listeners: {
-        start(event) {
-          if (event.altKey) {
-            const orig = elements.value.find((e) => e.id === event.target.id);
-            if (orig) cloneElement({ ...orig });
-            event.interaction.stop();
-          }
-        },
-        move(event) {
-          const el = elements.value.find((e) => e.id === event.target.id);
-          if (el) {
-            handleElementUpdate({
-              ...el,
-              x: el.x + event.dx,
-              y: el.y + event.dy,
-            });
-          }
-        },
-      },
-      modifiers: [interact.modifiers.restrictRect({ restriction: "parent" })],
-    })
-    .resizable({
-      edges: { left: true, right: true, top: true, bottom: true },
-      listeners: {
-        move(event) {
-          const el = elements.value.find((e) => e.id === event.target.id);
-          if (el) {
-            const updates: Partial<ElementState> = {
-              width: event.rect.width,
-              height: event.rect.height,
-              x: el.x + event.deltaRect.left,
-              y: el.y + event.deltaRect.top,
-            };
-            if (el.type === "circle") updates.height = event.rect.width;
-            handleElementUpdate({ ...el, ...updates });
-          }
-        },
-      },
-      modifiers: [
-        interact.modifiers.restrictRect({ restriction: "parent" }),
-        interact.modifiers.restrictSize({ min: { width: 50, height: 50 } }),
-      ],
-    });
-
-  interact(".rotate-handle").draggable({
-    onstart(event) {
-      const box = (event.target as HTMLElement).parentElement!;
-      const rect = box.getBoundingClientRect();
-      // @ts-ignore
-      event.interaction.boxCenterX = rect.left + rect.width / 2;
-      // @ts-ignore
-      event.interaction.boxCenterY = rect.top + rect.height / 2;
-    },
-    onmove(event) {
-      const box = (event.target as HTMLElement).parentElement!;
-      const el = elements.value.find((e) => e.id === box.id);
-      if (el) {
-        const angle =
-          (Math.atan2(
-            event.clientY - event.interaction.boxCenterY,
-            event.clientX - event.interaction.boxCenterX
-          ) *
-            180) /
-            Math.PI +
-          90;
-        handleElementUpdate({ ...el, angle });
-      }
-    },
-  });
-};
 
 onMounted(() => {
   nextTick(() => {
     // addElement("box") などデフォルト追加が不要ならコメントアウト
     selectElement(null);
   });
-  initializeInteract();
-
-  watch(
-    editMode,
-    (mode) => {
-      const enabled = mode === "individual";
-      interact(".visual-element").draggable({ enabled });
-      interact(".visual-element").resizable({ enabled });
-      interact(".rotate-handle").draggable({ enabled });
-    },
-    { immediate: true }
-  );
+  // initializeInteract();
+  
 });
 </script>
 

@@ -6,6 +6,7 @@
     class="visual-element button"
     :class="{ selected: props.isSelected }"
     :style="elementStyle"
+    @mousedown.stop="onSelectIfIndividual"
   >
     {{ props.state.content }}
     <div
