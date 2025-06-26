@@ -32,137 +32,30 @@
           @clone="cloneElement"
         />
         <!-- ★ レイアウトモード用ポップアップ -->
-        <!-- 右上ポップアップ -->
         <div v-if="editMode === 'layout'" class="controls layout-popup">
           <h3>Container</h3>
+          <!-- レイアウト方式切替 -->
           <label>
-            height: {{ flexState.containerHeight }}%
-            <input
-              type="range"
-              min="20"
-              max="100"
-              v-model.number="flexState.containerHeight"
-            />
-          </label>
-          <label>
-            direction:
-            <select v-model="flexState.direction">
-              <option>row</option>
-              <option>row-reverse</option>
-              <option>column</option>
-              <option>column-reverse</option>
+            レイアウト方式:
+            <select v-model="layoutSystem">
+              <option value="flex">Flexbox</option>
+              <option value="grid">CSS Grid</option>
             </select>
           </label>
-          <label>
-            justify-content:
-            <select v-model="flexState.justifyContent">
-              <option>flex-start</option>
-              <option>flex-end</option>
-              <option>center</option>
-              <option>space-between</option>
-              <option>space-around</option>
-              <option>space-evenly</option>
-            </select>
-          </label>
-          <label>
-            align-items:
-            <select v-model="flexState.alignItems">
-              <option>flex-start</option>
-              <option>flex-end</option>
-              <option>center</option>
-              <option>stretch</option>
-              <option>baseline</option>
-            </select>
-          </label>
-          <label>
-            flex-wrap:
-            <select v-model="flexState.flexWrap">
-              <option>nowrap</option>
-              <option>wrap</option>
-              <option>wrap-reverse</option>
-            </select>
-          </label>
-          <label>
-            gap: {{ flexState.gap }}px
-            <input
-              type="range"
-              min="0"
-              max="50"
-              v-model.number="flexState.gap"
-            />
-          </label>
-
-          <h3>CSS</h3>
-          <textarea readonly rows="6">{{ generatedLayoutCss }}</textarea>
-        </div>
-      </div>
-    </div>
-    <!-- 右側のコード表示エリア -->
-    <div class="code-container">
-      <div class="mode-tabs">
-        <button
-          :class="{ active: editMode === 'individual' }"
-          @click="setEditMode('individual')"
-        >
-          個別編集
-        </button>
-        <button
-          :class="{ active: editMode === 'layout' }"
-          @click="setEditMode('layout')"
-        >
-          レイアウト
-        </button>
-      </div>
-
-      <div class="css-panel-wrapper">
-        <div class="css-panel" v-show="editMode === 'layout'">
-          <h2>Container CSS (#sandbox)</h2>
-          <textarea readonly id="css-output-layout">{{
-            generatedLayoutCss
-          }}</textarea>
-        </div>
-        <div class="css-panel" v-show="editMode === 'individual'">
-          <h2>Selected Element CSS</h2>
-          <!-- 背景色コントロールの追加 -->
-          <div class="control-group">
-            <label>背景色</label>
-            <input
-              type="color"
-              v-if="selectedElement"
-              v-model="selectedElement.backgroundColor"
-            />
-          </div>
-          <textarea
-            id="css-output-individual"
-            :value="generatedIndividualCss"
-            @input="updateElementFromCss"
-          ></textarea>
-        </div>
-
-        <!-- <div class="css-panel" v-show="editMode === 'layout'">
-          <h2>Container CSS (#sandbox)</h2>
-          <div class="layout-controls">
-            <div class="control-group">
-              <label>height</label>
-              <input
-                type="range"
-                min="20"
-                max="100"
-                v-model.number="flexState.containerHeight"
-              />
-              <span>{{ flexState.containerHeight }}%</span>
-            </div>
-            <div class="control-group">
-              <label>flex-direction</label>
+          <!-- Flex モード -->
+          <template v-if="layoutSystem === 'flex'">
+            <label>height: {{ flexState.containerHeight }}%
+              <input type="range" min="20" max="100" v-model.number="flexState.containerHeight" />
+            </label>
+            <label>direction:
               <select v-model="flexState.direction">
                 <option>row</option>
                 <option>row-reverse</option>
                 <option>column</option>
                 <option>column-reverse</option>
               </select>
-            </div>
-            <div class="control-group">
-              <label>justify-content</label>
+            </label>
+            <label>justify-content:
               <select v-model="flexState.justifyContent">
                 <option>flex-start</option>
                 <option>flex-end</option>
@@ -171,9 +64,8 @@
                 <option>space-around</option>
                 <option>space-evenly</option>
               </select>
-            </div>
-            <div class="control-group">
-              <label>align-items</label>
+            </label>
+            <label>align-items:
               <select v-model="flexState.alignItems">
                 <option>flex-start</option>
                 <option>flex-end</option>
@@ -181,111 +73,106 @@
                 <option>stretch</option>
                 <option>baseline</option>
               </select>
-            </div>
-            <div class="control-group">
-              <label>flex-wrap</label>
+            </label>
+            <label>flex-wrap:
               <select v-model="flexState.flexWrap">
                 <option>nowrap</option>
                 <option>wrap</option>
                 <option>wrap-reverse</option>
               </select>
-            </div>
-            <div class="control-group">
-              <label>gap</label>
-              <input
-                type="range"
-                min="0"
-                max="50"
-                v-model.number="flexState.gap"
-              />
-              <span>{{ flexState.gap }}px</span>
-            </div>
+            </label>
+            <label>gap: {{ flexState.gap }}px
+              <input type="range" min="0" max="50" v-model.number="flexState.gap" />
+            </label>
+          </template>
+          <!-- Grid モード -->
+          <template v-else>
+            <label>grid-template-columns:
+              <input type="text" v-model="gridState.columns" placeholder="1fr 1fr 1fr" />
+            </label>
+            <label>grid-template-rows:
+              <input type="text" v-model="gridState.rows" placeholder="auto auto" />
+            </label>
+            <!-- <label>gap: {{ gridState.gap }}px
+              <input type="range" min="0" max="50" v-model.number="gridState.gap" />
+            </label> -->
+            <label>row-gap: {{ gridState.rowGap }}px
+              <input type="range" min="0" max="50" v-model.number="gridState.rowGap" />
+            </label>
+            <label>column-gap: {{ gridState.columnGap }}px
+              <input type="range" min="0" max="50" v-model.number="gridState.columnGap" />
+            </label>
+          </template>
+          <h3>CSS</h3>
+          <textarea readonly rows="6">{{ generatedLayoutCss }}</textarea>
+        </div>
+      </div>
+    </div>
+    <!-- 右側のコード表示エリア -->
+    <div class="code-container">
+      <div class="mode-tabs">
+        <button :class="{ active: editMode === 'individual' }" @click="setEditMode('individual')">個別編集</button>
+        <button :class="{ active: editMode === 'layout' }" @click="setEditMode('layout')">レイアウト</button>
+      </div>
+
+      <div class="css-panel-wrapper">
+        <div class="css-panel" v-show="editMode === 'layout'">
+          <h2>Container CSS (#sandbox)</h2>
+          <textarea readonly id="css-output-layout">{{ generatedLayoutCss }}</textarea>
+        </div>
+        <div class="css-panel" v-show="editMode === 'individual'">
+          <h2>Selected Element CSS</h2>
+          <div class="control-group">
+            <label>背景色</label>
+            <input type="color" v-if="selectedElement" v-model="selectedElement.backgroundColor" />
           </div>
-          <pre
-            id="css-output-layout"
-          ><code>{{ generatedLayoutCss }}</code></pre>
-        </div> -->
+          <textarea id="css-output-individual" :value="generatedIndividualCss" @input="updateElementFromCss"></textarea>
+        </div>
       </div>
 
       <div class="button-area">
         <button class="copy-button" @click="copyCss">コードをコピー</button>
-        <button
-          v-if="editMode === 'individual' && selectedElementId"
-          class="delete-button"
-          @click="deleteSelectedElement"
-        >
-          選択中の要素を削除
-        </button>
+        <button v-if="editMode === 'individual' && selectedElementId" class="delete-button" @click="deleteSelectedElement">選択中の要素を削除</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import {
-  ref,
-  computed,
-  onMounted,
-  nextTick,
-  reactive,
-  watch,
-  type CSSProperties,
-} from "vue";
-import VisualBox from "./components/VisualBox.vue";
-import VisualCircle from "./components/VisualCircle.vue";
-import VisualText from "./components/VisualText.vue";
-import VisualImage from "./components/VisualImage.vue";
-import VisualButton from "./components/VisualButton.vue";
-import type { ElementState } from "./types";
-import interact from "interactjs";
+import { ref, computed, onMounted, nextTick, reactive, watch, type CSSProperties } from 'vue';
+import VisualBox from './components/VisualBox.vue';
+import VisualCircle from './components/VisualCircle.vue';
+import VisualText from './components/VisualText.vue';
+import VisualImage from './components/VisualImage.vue';
+import VisualButton from './components/VisualButton.vue';
+import type { ElementState } from './types';
+import interact from 'interactjs';
 
 const elements = ref<ElementState[]>([]);
 const selectedElementId = ref<string | null>(null);
-
-// 追加 start ▶
-/**
- * selectedElementId の値をもとに、
- * elements 配列から該当要素オブジェクトそのものを返す computed
- */
-const selectedElement = computed<ElementState | null>(() => {
-  return elements.value.find((e) => e.id === selectedElementId.value) || null;
-});
-// 追加 end ◀
+const selectedElement = computed<ElementState | null>(() => elements.value.find(e => e.id === selectedElementId.value) || null);
 
 const sandboxRef = ref<HTMLElement | null>(null);
 let elementCounter = 0;
-const editMode = ref<"individual" | "layout">("individual");
+const editMode = ref<'individual'|'layout'>('individual');
 
-const flexState = reactive({
-  containerHeight: 100,
-  direction: "row",
-  justifyContent: "flex-start",
-  alignItems: "flex-start",
-  flexWrap: "nowrap",
-  gap: 10,
-});
+// ◀ Flex/Grid 切り替え ▶
+const layoutSystem = ref<'flex'|'grid'>('flex');
+const flexState = reactive({ containerHeight:100, direction:'row', justifyContent:'flex-start', alignItems:'flex-start', flexWrap:'nowrap', gap:10 });
+const gridState = reactive({ columns:'1fr 1fr 1fr', rows:'auto', gap:10, rowGap:10, columnGap:10 });
+// ◀ ここまで ▶
 
-const componentMap: any = {
-  box: VisualBox,
-  circle: VisualCircle,
-  text: VisualText,
-  image: VisualImage,
-  button: VisualButton,
-};
+const componentMap:Record<string,any> = { box:VisualBox, circle:VisualCircle, text:VisualText, image:VisualImage, button:VisualButton };
 
-const sandboxStyle = computed((): CSSProperties => {
-  if (editMode.value === "layout") {
-    return {
-      display: "flex",
-      height: `${flexState.containerHeight}%`,
-      flexDirection: flexState.direction as any,
-      justifyContent: flexState.justifyContent,
-      alignItems: flexState.alignItems,
-      flexWrap: flexState.flexWrap as any,
-      gap: `${flexState.gap}px`,
-    };
-  }
-  return { height: "100%" };
+const sandboxStyle = computed<CSSProperties>(() => {
+  if(editMode.value!=='layout') return { height:'100%' };
+  if(layoutSystem.value==='flex') return {
+    display:'flex', height:`${flexState.containerHeight}%`, flexDirection:flexState.direction as any,
+    justifyContent:flexState.justifyContent, alignItems:flexState.alignItems,
+    flexWrap:flexState.flexWrap as any, gap:`${flexState.gap}px`
+  };
+  return { display:'grid', gridTemplateColumns:gridState.columns,
+    gridTemplateRows:gridState.rows,  rowGap:`${gridState.rowGap}px`, columnGap:`${gridState.columnGap}px` };
 });
 
 // 個別要素のCSSコードを生成するcomputed （フォント関連もBOX/ボタンに追加）
@@ -349,18 +236,31 @@ const generatedIndividualCss = computed(() => {
 
 
 const generatedLayoutCss = computed(() => {
-  const code = `
+  if (layoutSystem.value === 'flex') {
+    return `
 #sandbox {
-    display: flex;
-    height: ${flexState.containerHeight}%;
-    flex-direction: ${flexState.direction};
-    justify-content: ${flexState.justifyContent};
-    align-items: ${flexState.alignItems};
-    flex-wrap: ${flexState.flexWrap};
-    gap: ${flexState.gap}px;
-}`;
-  return code.trim().replace(/^ {4}/gm, "    ");
-});
+  display: flex;
+  height: ${flexState.containerHeight}%;
+  flex-direction: ${flexState.direction};
+  justify-content: ${flexState.justifyContent};
+  align-items: ${flexState.alignItems};
+  flex-wrap: ${flexState.flexWrap};
+  gap: ${flexState.gap}px;
+}`.trim()
+  } else {
+    // Grid モード
+    return `
+#sandbox {
+  display: grid;
+  grid-template-columns: ${gridState.columns};
+  grid-template-rows: ${gridState.rows};
+  // gap: ${gridState.gap}px;
+  row-gap: ${gridState.rowGap}px;
+  column-gap: ${gridState.columnGap}px;
+}`.trim()
+  }
+})
+
 
 const addElement = (
   type: ElementState["type"],
@@ -856,5 +756,12 @@ body {
   font-family: monospace;
   height: 80px;
   resize: none;
+}
+.controls.layout-popup {
+  position:fixed; top:16px; right:16px; width:260px;
+  max-height:calc(100%-32px); overflow-y:auto;
+  background:#fafafa; border:1px solid #ddd; padding:12px;
+  border-radius:6px; z-index:1000; font-size:12px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.15);
 }
 </style>
