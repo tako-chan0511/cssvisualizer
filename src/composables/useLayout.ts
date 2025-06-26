@@ -1,9 +1,41 @@
 import { ref, reactive, computed, type CSSProperties } from 'vue';
 
 // Composable for managing layout (Flexbox & CSS Grid) state and styles
+// composables/useLayout.ts
+
+export type LayoutCategory = {
+  name: string
+  modes: { id: string; label: string }[]
+}
+
+export const layoutCategories: LayoutCategory[] = [
+  {
+    name: "標準フロー",
+    modes: [
+      { id: "flow",      label: "標準フロー (block/inline)" },
+      { id: "float",     label: "Float" },
+      { id: "multicol",  label: "マルチカラム" },
+    ],
+  },
+  {
+    name: "コンテナレイアウト",
+    modes: [
+      { id: "flex",  label: "Flexbox" },
+      { id: "grid",  label: "CSS Grid" },
+      { id: "table", label: "テーブルレイアウト" },
+    ],
+  },
+  {
+    name: "絶対配置系",
+    modes: [
+      { id: "abs",   label: "相対＋絶対配置" },
+    ],
+  },
+]
+
 export function useLayout() {
-  // レイアウト方式: 'flex' | 'grid'
-  const layoutSystem = ref<'flex' | 'grid'>('flex');
+  // レイアウト方式: 標準方式 | コンテナレイアウト　| 絶対配置系
+  const layoutSystem = ref<string>("flow")
 
   // Flexbox 用ステート
   const flexState = reactive({
@@ -77,5 +109,6 @@ export function useLayout() {
     gridState,
     sandboxStyle,
     generatedLayoutCss,
+    layoutCategories     // ← これを追加！
   };
 }

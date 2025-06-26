@@ -39,52 +39,83 @@
         <!-- レイアウトモード用ポップアップ -->
         <div v-if="editMode === 'layout'" class="controls layout-popup">
           <h3>Container</h3>
+          <!-- App.vue のレイアウトモード用ポップアップ内 -->
           <label>
             レイアウト方式:
             <select v-model="layoutSystem">
-              <option value="flex">Flexbox</option>
-              <option value="grid">CSS Grid</option>
+              <optgroup
+                v-for="cat in layoutCategories"
+                :key="cat.name"
+                :label="cat.name"
+              >
+                <option
+                  v-for="mode in cat.modes"
+                  :key="mode.id"
+                  :value="mode.id"
+                >
+                  {{ mode.label }}
+                </option>
+              </optgroup>
             </select>
           </label>
 
           <!-- Flex モード -->
-          <template v-if="layoutSystem==='flex'">
+          <template v-if="layoutSystem === 'flex'">
             <label>
               height: {{ flexState.containerHeight }}%
-              <input type="range" min="20" max="100" v-model.number="flexState.containerHeight" />
+              <input
+                type="range"
+                min="20"
+                max="100"
+                v-model.number="flexState.containerHeight"
+              />
             </label>
             <label>
               direction:
               <select v-model="flexState.direction">
-                <option>row</option><option>row-reverse</option>
-                <option>column</option><option>column-reverse</option>
+                <option>row</option>
+                <option>row-reverse</option>
+                <option>column</option>
+                <option>column-reverse</option>
               </select>
             </label>
             <label>
               justify-content:
               <select v-model="flexState.justifyContent">
-                <option>flex-start</option><option>flex-end</option>
-                <option>center</option><option>space-between</option>
-                <option>space-around</option><option>space-evenly</option>
+                <option>flex-start</option>
+                <option>flex-end</option>
+                <option>center</option>
+                <option>space-between</option>
+                <option>space-around</option>
+                <option>space-evenly</option>
               </select>
             </label>
             <label>
               align-items:
               <select v-model="flexState.alignItems">
-                <option>flex-start</option><option>flex-end</option>
-                <option>center</option><option>stretch</option>
+                <option>flex-start</option>
+                <option>flex-end</option>
+                <option>center</option>
+                <option>stretch</option>
                 <option>baseline</option>
               </select>
             </label>
             <label>
               flex-wrap:
               <select v-model="flexState.flexWrap">
-                <option>nowrap</option><option>wrap</option><option>wrap-reverse</option>
+                <option>nowrap</option>
+                <option>wrap</option>
+                <option>wrap-reverse</option>
               </select>
             </label>
             <label>
               gap: {{ flexState.gap }}px
-              <input type="range" min="0" max="50" v-model.number="flexState.gap" />
+              <input
+                type="range"
+                min="0"
+                max="50"
+                v-model.number="flexState.gap"
+              />
             </label>
           </template>
 
@@ -92,19 +123,37 @@
           <template v-else>
             <label>
               grid-template-columns:
-              <input type="text" v-model="gridState.columns" placeholder="1fr 1fr 1fr" />
+              <input
+                type="text"
+                v-model="gridState.columns"
+                placeholder="1fr 1fr 1fr"
+              />
             </label>
             <label>
               grid-template-rows:
-              <input type="text" v-model="gridState.rows" placeholder="auto auto" />
+              <input
+                type="text"
+                v-model="gridState.rows"
+                placeholder="auto auto"
+              />
             </label>
             <label>
               row-gap: {{ gridState.rowGap }}px
-              <input type="range" min="0" max="50" v-model.number="gridState.rowGap" />
+              <input
+                type="range"
+                min="0"
+                max="50"
+                v-model.number="gridState.rowGap"
+              />
             </label>
             <label>
               column-gap: {{ gridState.columnGap }}px
-              <input type="range" min="0" max="50" v-model.number="gridState.columnGap" />
+              <input
+                type="range"
+                min="0"
+                max="50"
+                v-model.number="gridState.columnGap"
+              />
             </label>
           </template>
 
@@ -118,54 +167,61 @@
     <!-- 右側のコード表示エリア -->
     <div class="code-container">
       <div class="mode-tabs">
-        <button :class="{ active: editMode==='individual' }" @click="setEditMode('individual')">
+        <button
+          :class="{ active: editMode === 'individual' }"
+          @click="setEditMode('individual')"
+        >
           個別編集
         </button>
-        <button :class="{ active: editMode==='layout' }" @click="setEditMode('layout')">
+        <button
+          :class="{ active: editMode === 'layout' }"
+          @click="setEditMode('layout')"
+        >
           レイアウト
         </button>
       </div>
 
       <div class="css-panel-wrapper">
-       <!-- 一つのパネルにまとめて、ヘッダーと中身を切り替える -->
-       <div class="css-panel">
-         <h2>
-           {{ editMode === 'individual'
-               ? 'Selected Element CSS'
-               : 'Container CSS (#sandbox)' }}
-         </h2>
+        <!-- 一つのパネルにまとめて、ヘッダーと中身を切り替える -->
+        <div class="css-panel">
+          <h2>
+            {{
+              editMode === "individual"
+                ? "Selected Element CSS"
+                : "Container CSS (#sandbox)"
+            }}
+          </h2>
 
-         <!-- 個別編集モードの中身 -->
-         <template v-if="editMode === 'individual'">
-           <div class="control-group">
-             <label>背景色</label>
-             <input
-               type="color"
-               v-if="selectedElement"
-               v-model="selectedElement.backgroundColor"
-             />
-           </div>
-           <textarea
-             id="css-output-individual"
-             :value="generatedIndividualCss"
-             @input="updateElementFromCss"
-           ></textarea>
-         </template>
+          <!-- 個別編集モードの中身 -->
+          <template v-if="editMode === 'individual'">
+            <div class="control-group">
+              <label>背景色</label>
+              <input
+                type="color"
+                v-if="selectedElement"
+                v-model="selectedElement.backgroundColor"
+              />
+            </div>
+            <textarea
+              id="css-output-individual"
+              :value="generatedIndividualCss"
+              @input="updateElementFromCss"
+            ></textarea>
+          </template>
 
-         <!-- レイアウトモードの中身 -->
-         <template v-else>
-           <textarea
-             id="css-output-layout"
-             readonly
-           >{{ generatedLayoutCss }}</textarea>
-         </template>
-       </div>
+          <!-- レイアウトモードの中身 -->
+          <template v-else>
+            <textarea id="css-output-layout" readonly>{{
+              generatedLayoutCss
+            }}</textarea>
+          </template>
+        </div>
       </div>
 
       <div class="button-area">
         <button class="copy-button" @click="copyCss">コードをコピー</button>
         <button
-          v-if="editMode==='individual' && selectedElementId"
+          v-if="editMode === 'individual' && selectedElementId"
           class="delete-button"
           @click="deleteSelectedElement"
         >
@@ -176,30 +232,37 @@
   </div>
 </template>
 
-
 <script setup lang="ts">
-import { ref, computed, reactive, watch, onMounted, nextTick, type CSSProperties } from 'vue'
-import interact from 'interactjs'
-import { useInteract } from '@/composables/useInteract'
-import { useElements } from './composables/useElements'
-import { useLayout }   from './composables/useLayout'
-import { useCssGenerator } from './composables/useCssGenerator'
-import type { ElementState } from './types'
-import VisualBox    from './components/VisualBox.vue'
-import VisualCircle from './components/VisualCircle.vue'
-import VisualText   from './components/VisualText.vue'
-import VisualImage  from './components/VisualImage.vue'
-import VisualButton from './components/VisualButton.vue'
+import {
+  ref,
+  computed,
+  reactive,
+  watch,
+  onMounted,
+  nextTick,
+  type CSSProperties,
+} from "vue";
+import interact from "interactjs";
+import { useInteract } from "@/composables/useInteract";
+import { useElements } from "./composables/useElements";
+import { useLayout } from "./composables/useLayout";
+import { useCssGenerator } from "./composables/useCssGenerator";
+import type { ElementState } from "./types";
+import VisualBox from "./components/VisualBox.vue";
+import VisualCircle from "./components/VisualCircle.vue";
+import VisualText from "./components/VisualText.vue";
+import VisualImage from "./components/VisualImage.vue";
+import VisualButton from "./components/VisualButton.vue";
 
 const componentMap = {
-  box:    VisualBox,
+  box: VisualBox,
   circle: VisualCircle,
-  text:   VisualText,
-  image:  VisualImage,
+  text: VisualText,
+  image: VisualImage,
   button: VisualButton,
-}
+};
 // ──────── ① editMode をいちばん上で宣言 ────────
-const editMode = ref<'individual' | 'layout'>('individual')
+const editMode = ref<"individual" | "layout">("individual");
 
 // ──────── ② useElements で要素操作ロジック ────────
 const {
@@ -211,8 +274,8 @@ const {
   deselectAll,
   handleElementUpdate,
   cloneElement,
-  deleteSelectedElement
-} = useElements()
+  deleteSelectedElement,
+} = useElements();
 
 // ──────── ③ useLayout を呼んで、grid/flex と CSS 生成 ────────
 //     → ここで generatedLayoutCss も受け取る
@@ -221,22 +284,20 @@ const {
   flexState,
   gridState,
   sandboxStyle,
-  generatedLayoutCss
-} = useLayout()
+  generatedLayoutCss,
+  layoutCategories, // ← ここで受け取る
+} = useLayout();
 
 // ──────── ④ useCssGenerator で個別要素用の CSS 生成 ────────
-const {
-  generatedIndividualCss,
-  updateElementFromCss,
-  copyCss
-} = useCssGenerator(
-  elements,
-  selectedElementId,
-  editMode,      // ← 先に宣言しておいた editMode を渡す
-  flexState,
-  gridState,
-  layoutSystem
-)
+const { generatedIndividualCss, updateElementFromCss, copyCss } =
+  useCssGenerator(
+    elements,
+    selectedElementId,
+    editMode, // ← 先に宣言しておいた editMode を渡す
+    flexState,
+    gridState,
+    layoutSystem
+  );
 
 // ② interact.js ロジックを composable に移譲
 useInteract({
@@ -245,13 +306,12 @@ useInteract({
   selectElement,
   handleElementUpdate,
   cloneElement,
-})
+});
 
 const setEditMode = (mode: "individual" | "layout") => {
   editMode.value = mode;
   if (mode === "layout") deselectAll();
 };
-
 
 onMounted(() => {
   nextTick(() => {
@@ -259,7 +319,6 @@ onMounted(() => {
     selectElement(null);
   });
   // initializeInteract();
-  
 });
 </script>
 

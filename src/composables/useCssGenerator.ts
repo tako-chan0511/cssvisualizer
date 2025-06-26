@@ -9,7 +9,7 @@ export function useCssGenerator(
   editMode: Ref<'individual' | 'layout'>,
   flexState: any,
   gridState: any,
-  layoutSystem: Ref<'flex'|'grid'>
+  layoutSystem: Ref<string>
 ) {
   const selectedElement = computed(() =>
     elements.value.find(e => e.id === selectedElementId.value) || null
@@ -35,7 +35,6 @@ export function useCssGenerator(
     transform: translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${angle.toFixed(1)}deg);
   }`
 
-    // フォント系プロパティ
     if (['box','text','button','circle'].includes(type)) {
       let fontCss =
         `    color: ${fontColor   || "#000000"};\n` +
@@ -58,26 +57,67 @@ export function useCssGenerator(
   })
 
   const generatedLayoutCss = computed(() => {
-    if (layoutSystem.value === 'flex') {
-      return `
+    switch (layoutSystem.value) {
+      case 'flex':
+        return `#sandbox {
+  display: flex;
+  height: ${flexState.containerHeight}%;
+  flex-direction: ${flexState.direction};
+  justify-content: ${flexState.justifyContent};
+  align-items: ${flexState.alignItems};
+  flex-wrap: ${flexState.flexWrap};
+  gap: ${flexState.gap}px;
+}`
+
+      case 'grid':
+        return `#sandbox {
+  display: grid;
+  grid-template-columns: ${gridState.columns};
+  grid-template-rows: ${gridState.rows};
+  row-gap: ${gridState.rowGap}px;
+  column-gap: ${gridState.columnGap}px;
+}`
+
+      case 'flow':
+        return `/* 標準フロー (block/inline) */
 #sandbox {
-    display: flex;
-    height: ${flexState.containerHeight}%;
-    flex-direction: ${flexState.direction};
-    justify-content: ${flexState.justifyContent};
-    align-items: ${flexState.alignItems};
-    flex-wrap: ${flexState.flexWrap};
-    gap: ${flexState.gap}px;
-}`.trim()
-    } else {
-      return `
+  display: block;
+}`
+
+      case 'float':
+        return `/* Float レイアウト */
+#sandbox > * {
+  float: left;
+}`
+
+      case 'multicol':
+        return `/* マルチカラム */
 #sandbox {
-    display: grid;
-    grid-template-columns: ${gridState.columns};
-    grid-template-rows: ${gridState.rows};
-    row-gap: ${gridState.rowGap}px;
-    column-gap: ${gridState.columnGap}px;
-}`.trim()
+  column-count: 3;
+  column-gap: 1em;
+}`
+
+      case 'table':
+        return `/* テーブルレイアウト */
+#sandbox {
+  display: table;
+  width: 100%;
+}
+#sandbox > * {
+  display: table-cell;
+}`
+
+      case 'abs':
+        return `/* 相対＋絶対配置 */
+#sandbox {
+  position: relative;
+}
+#sandbox > * {
+  position: absolute;
+}`
+
+      default:
+        return `/* 未対応のレイアウト方式です */`
     }
   })
 
@@ -112,9 +152,7 @@ export function useCssGenerator(
     const code = editMode.value === 'individual'
       ? generatedIndividualCss.value
       : generatedLayoutCss.value
-    if (!code.startsWith('/*')) {
-      navigator.clipboard.writeText(code)
-    }
+    if (!code.startsWith('/*')) navigator.clipboard.writeText(code)
   }
 
   return {
