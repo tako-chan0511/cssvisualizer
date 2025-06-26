@@ -148,6 +148,7 @@ import VisualImage from './components/VisualImage.vue';
 import VisualButton from './components/VisualButton.vue';
 import { useElements } from './composables/useElements';
 import type { ElementState } from './types';
+import { useLayout } from '@/composables/useLayout';
 
 const {
    elements,
@@ -161,28 +162,17 @@ const {
    deleteSelectedElement
  } = useElements();
 
+ const { layoutSystem, flexState, gridState, sandboxStyle, generatedLayoutCss } = useLayout();
+
  const sandboxRef = ref<HTMLElement | null>(null);
 let elementCounter = 0;
 const editMode = ref<'individual'|'layout'>('individual');
 
-// ◀ Flex/Grid 切り替え ▶
-const layoutSystem = ref<'flex'|'grid'>('flex');
-const flexState = reactive({ containerHeight:100, direction:'row', justifyContent:'flex-start', alignItems:'flex-start', flexWrap:'nowrap', gap:10 });
-const gridState = reactive({ columns:'1fr 1fr 1fr', rows:'auto', gap:10, rowGap:10, columnGap:10 });
-// ◀ ここまで ▶
+
 
 const componentMap:Record<string,any> = { box:VisualBox, circle:VisualCircle, text:VisualText, image:VisualImage, button:VisualButton };
 
-const sandboxStyle = computed<CSSProperties>(() => {
-  if(editMode.value!=='layout') return { height:'100%' };
-  if(layoutSystem.value==='flex') return {
-    display:'flex', height:`${flexState.containerHeight}%`, flexDirection:flexState.direction as any,
-    justifyContent:flexState.justifyContent, alignItems:flexState.alignItems,
-    flexWrap:flexState.flexWrap as any, gap:`${flexState.gap}px`
-  };
-  return { display:'grid', gridTemplateColumns:gridState.columns,
-    gridTemplateRows:gridState.rows,  rowGap:`${gridState.rowGap}px`, columnGap:`${gridState.columnGap}px` };
-});
+
 
 // 個別要素のCSSコードを生成するcomputed （フォント関連もBOX/ボタンに追加）
 const generatedIndividualCss = computed(() => {
@@ -243,117 +233,6 @@ const generatedIndividualCss = computed(() => {
 });
 
 
-
-const generatedLayoutCss = computed(() => {
-  if (layoutSystem.value === 'flex') {
-    return `
-#sandbox {
-  display: flex;
-  height: ${flexState.containerHeight}%;
-  flex-direction: ${flexState.direction};
-  justify-content: ${flexState.justifyContent};
-  align-items: ${flexState.alignItems};
-  flex-wrap: ${flexState.flexWrap};
-  gap: ${flexState.gap}px;
-}`.trim()
-  } else {
-    // Grid モード
-    return `
-#sandbox {
-  display: grid;
-  grid-template-columns: ${gridState.columns};
-  grid-template-rows: ${gridState.rows};
-  // gap: ${gridState.gap}px;
-  row-gap: ${gridState.rowGap}px;
-  column-gap: ${gridState.columnGap}px;
-}`.trim()
-  }
-})
-
-
-// const addElement = (
-//   type: ElementState["type"],
-//   initialState: Partial<ElementState> = {}
-// ) => {
-//   const sandboxRect = sandboxRef.value?.getBoundingClientRect();
-//   elementCounter++;
-//   const id = `${type}-${elementCounter}`;
-
-//   const defaults = {
-//     x: sandboxRect ? sandboxRect.width / 2 - 75 : 100,
-//     y: sandboxRect ? sandboxRect.height / 2 - 75 : 100,
-//     width: 150,
-//     height: 150,
-//     angle: 0,
-//     content: `${type.toUpperCase()} ${elementCounter}`,
-//     zIndex: elementCounter,
-//     // ★★★ 追加：必ず背景色を初期化 ★★★
-//     backgroundColor:
-//       type === "box" ? "#6dd5ed" /* 水色グラデ調のスタート色 */ : undefined,
-//     fontSize: 16,
-//     fontColor: "#000000",
-//     fontFamily: "sans-serif", // ← 追加
-//     fontWeight: "normal",
-//     fontStyle: "normal",
-//   };
-
-//   if (type === "text") {
-//     defaults.height = 50;
-//     defaults.content = "テキスト要素";
-//   }
-//   if (type === "button") {
-//     defaults.height = 60;
-//     defaults.content = "ボタン";
-//   }
-//   if (type === "image") {
-//     defaults.content = ""; // 画像にはテキストは不要
-//   }
-
-//   const newElement: ElementState = {
-//     id,
-//     type,
-//     ...defaults,
-//     ...initialState,
-//     src:
-//       type === "image"
-//         ? "https://placehold.co/600x400/EEE/31343C?text=Image"
-//         : undefined,
-//   };
-//   elements.value.push(newElement);
-//   selectElement(id);
-// };
-
-// const selectElement = (id: string | null) => {
-//   selectedElementId.value = id;
-// };
-
-// const deselectAll = () => {
-//   if (editMode.value === "individual") {
-//     selectedElementId.value = null;
-//   }
-// };
-
-// const handleElementUpdate = (newState: ElementState) => {
-//   const index = elements.value.findIndex((b) => b.id === newState.id);
-//   if (index !== -1) {
-//     elements.value[index] = newState;
-//   }
-// };
-
-// // 複製するときは x/y とサイズ・回転だけ受け渡し。
-// // id と content は addElement() 側で再生成させる
-// const cloneElement = (originalState: ElementState) => {
-//   addElement(originalState.type, {
-//     // 移動だけコピー
-//     x: originalState.x + 20,
-//     y: originalState.y + 20,
-//     // 必要ならサイズや回転もコピーしたい場合はここに足す：
-//     width: originalState.width,
-//     height: originalState.height,
-//     angle: originalState.angle,
-//   });
-// };
-
 const setEditMode = (mode: "individual" | "layout") => {
   editMode.value = mode;
   if (mode === "layout") {
@@ -400,16 +279,6 @@ const copyCss = () => {
   navigator.clipboard.writeText(codeToCopy);
 };
 
-// const deleteSelectedElement = () => {
-//   if (!selectedElementId.value) return;
-//   const index = elements.value.findIndex(
-//     (b) => b.id === selectedElementId.value
-//   );
-//   if (index !== -1) {
-//     elements.value.splice(index, 1);
-//     deselectAll();
-//   }
-// };
 
 const initializeInteract = () => {
   interact(".visual-element").unset();
