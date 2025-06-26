@@ -59,6 +59,29 @@
             </select>
           </label>
 
+          <!-- layout-popup 内、Flex と Grid のテンプレートの前に -->
+          <template v-if="layoutSystem === 'flow'">
+            <label>
+              表示モード:
+              <label
+                ><input
+                  type="radio"
+                  value="block"
+                  v-model="flowState.display"
+                />
+                block</label
+              >
+              <label
+                ><input
+                  type="radio"
+                  value="inline"
+                  v-model="flowState.display"
+                />
+                inline</label
+              >
+            </label>
+          </template>
+
           <!-- Flex モード -->
           <template v-if="layoutSystem === 'flex'">
             <label>
@@ -281,6 +304,7 @@ const {
 //     → ここで generatedLayoutCss も受け取る
 const {
   layoutSystem,
+   flowState,          // ← ここに flowState を追加
   flexState,
   gridState,
   sandboxStyle,
