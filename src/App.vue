@@ -631,7 +631,7 @@ body {
   top: 16px;
   right: 16px;
   width: 260px;
-  max-height: calc(100%-32px);
+  max-height: calc(100% - 32px);
   overflow-y: auto;
   background: #fafafa;
   border: 1px solid #ddd;
