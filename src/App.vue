@@ -256,6 +256,8 @@
 </template>
 
 <script setup lang="ts">
+import { toRefs } from 'vue';
+import { useCssGenerator } from './composables/useCssGenerator';
 import {
   ref,
   computed,
@@ -269,7 +271,7 @@ import interact from "interactjs";
 import { useInteract } from "@/composables/useInteract";
 import { useElements } from "./composables/useElements";
 import { useLayout } from "./composables/useLayout";
-import { useCssGenerator } from "./composables/useCssGenerator";
+// import { useCssGenerator } from "./composables/useCssGenerator";
 import type { ElementState } from "./types";
 import VisualBox from "./components/VisualBox.vue";
 import VisualCircle from "./components/VisualCircle.vue";
@@ -303,14 +305,16 @@ const {
 // ──────── ③ useLayout を呼んで、grid/flex と CSS 生成 ────────
 //     → ここで generatedLayoutCss も受け取る
 const {
-  layoutSystem,
-   flowState,          // ← ここに flowState を追加
-  flexState,
-  gridState,
-  sandboxStyle,
-  generatedLayoutCss,
-  layoutCategories, // ← ここで受け取る
+  layoutSystem, 
+  flowState, 
+  flexState, 
+  gridState, 
+  sandboxStyle, 
+  generatedLayoutCss, 
+  layoutCategories 
 } = useLayout();
+// flowState.display を Ref として取り出す
+const { display: flowDisplay } = toRefs(flowState);
 
 // ──────── ④ useCssGenerator で個別要素用の CSS 生成 ────────
 const { generatedIndividualCss, updateElementFromCss, copyCss } =
@@ -320,7 +324,8 @@ const { generatedIndividualCss, updateElementFromCss, copyCss } =
     editMode, // ← 先に宣言しておいた editMode を渡す
     flexState,
     gridState,
-    layoutSystem
+    layoutSystem,
+    flowDisplay
   );
 
 // ② interact.js ロジックを composable に移譲
