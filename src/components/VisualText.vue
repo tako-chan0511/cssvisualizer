@@ -6,7 +6,7 @@
     class="visual-element text"
     :class="{ selected: isSelected }"
     :style="elementStyle"
-    @mousedown.stop="onSelect"
+    @mousedown.stop.prevent="onSelect"
   >
     {{ state.content }}
     <div v-if="isSelected && !isLayoutMode" class="rotate-handle"></div>
@@ -31,7 +31,6 @@
         <option value="cursive">cursive</option>
       </select>
     </label>
-
     <label>
       太さ:
       <select v-model="fontWeight">
@@ -41,7 +40,6 @@
         <option value="lighter">lighter</option>
       </select>
     </label>
-
     <label>
       スタイル:
       <select v-model="fontStyle">
@@ -78,7 +76,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, type CSSProperties } from "vue";
+import { ref, watch, computed, toRefs, type CSSProperties } from "vue";
 import type { ElementState } from "../types";
 
 // props 受け取り
@@ -87,82 +85,66 @@ const props = defineProps<{
   isSelected: boolean;
   isLayoutMode: boolean;
 }>();
+const { state, isSelected, isLayoutMode } = toRefs(props);
+const emit = defineEmits<{ (e: "select", id: string): void }>();
 
-// emit 定義
-const emit = defineEmits<{
-  (e: "select", id: string): void;
-}>();
-
-// ローカルバインド用
-const textContent = ref(props.state.content);
-const fontSize = ref(props.state.fontSize ?? 24);
-const fontColor = ref(props.state.fontColor ?? "#333333");
-const bgColor = ref(props.state.backgroundColor ?? "#ffffff");
-const width = ref(props.state.width);
-const height = ref(props.state.height);
-const x = ref(props.state.x);
-const y = ref(props.state.y);
+// ローカルバインド用 refs
+const textContent = ref(state.value.content);
+const fontSize = ref(state.value.fontSize ?? 24);
+const fontColor = ref(state.value.fontColor ?? "#333333");
+const bgColor = ref(state.value.backgroundColor ?? "#ffffff");
+const width = ref(state.value.width);
+const height = ref(state.value.height);
+const x = ref(state.value.x);
+const y = ref(state.value.y);
+const fontFamily = ref(state.value.fontFamily ?? "sans-serif");
+const fontWeight = ref(state.value.fontWeight ?? "normal");
+const fontStyle = ref(state.value.fontStyle ?? "normal");
 
 // state への反映
-watch(textContent, (v) => (props.state.content = v));
-watch(fontSize, (v) => (props.state.fontSize = v));
-watch(fontColor, (v) => (props.state.fontColor = v));
-watch(bgColor, (v) => (props.state.backgroundColor = v));
-watch(width, (v) => (props.state.width = v));
-watch(height, (v) => (props.state.height = v));
-watch(x, (v) => (props.state.x = v));
-watch(y, (v) => (props.state.y = v));
-
-const fontFamily = ref(props.state.fontFamily ?? 'sans-serif')
-const fontWeight = ref(props.state.fontWeight ?? 'normal')
-const fontStyle  = ref(props.state.fontStyle  ?? 'normal')
-
-// state に反映
-watch(fontFamily, v => props.state.fontFamily = v)
-watch(fontWeight, v => props.state.fontWeight = v)
-watch(fontStyle,  v => props.state.fontStyle  = v)
-
-
-
+watch(textContent, v => state.value.content = v);
+watch(fontSize, v => state.value.fontSize = v);
+watch(fontColor, v => state.value.fontColor = v);
+watch(bgColor, v => state.value.backgroundColor = v);
+watch(width, v => state.value.width = v);
+watch(height, v => state.value.height = v);
+watch(x, v => state.value.x = v);
+watch(y, v => state.value.y = v);
+watch(fontFamily, v => state.value.fontFamily = v);
+watch(fontWeight, v => state.value.fontWeight = v);
+watch(fontStyle, v => state.value.fontStyle = v);
 
 // 選択ハンドラ
 function onSelect() {
-  emit("select", props.state.id);
+  if (!isLayoutMode.value) emit("select", state.value.id);
 }
 
 // 要素スタイル
-const elementStyle = computed<CSSProperties>(() => {
-  const { state, isLayoutMode } = props;
+const elementStyle = computed((): CSSProperties => {
   const baseStyle: CSSProperties = {
-    color: state.fontColor,
-    fontSize: `${state.fontSize}px`,
-    fontFamily: fontFamily.value,
-    fontWeight: fontWeight.value,
-    fontStyle:  fontStyle.value,
-    backgroundColor: state.backgroundColor,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
+    display: state.value.display,
+    color: state.value.fontColor,
+    fontSize: `${state.value.fontSize}px`,
+    fontFamily: state.value.fontFamily,
+    fontWeight: state.value.fontWeight,
+    fontStyle: state.value.fontStyle,
+    backgroundColor: state.value.backgroundColor,
     textAlign: "center",
     wordBreak: "break-word",
-    width: `${state.width}px`,
-    height: `${state.height}px`,
+    width: `${state.value.width}px`,
+    height: `${state.value.height}px`,
   };
-
-  if (isLayoutMode) {
-    // レイアウトモードでは絶対配置を外す
+  if (isLayoutMode.value) {
     return baseStyle;
-  } else {
-    // 個別編集モードでは絶対配置と回転を追加
-    return {
-      ...baseStyle,
-      position: "absolute",
-      left: "0px",
-      top: "0px",
-      transform: `translate(${state.x}px, ${state.y}px) rotate(${state.angle}deg)`,
-      zIndex: state.zIndex,
-    };
   }
+  return {
+    ...baseStyle,
+    position: "absolute",
+    left: "0px",
+    top: "0px",
+    transform: `translate(${state.value.x}px, ${state.value.y}px) rotate(${state.value.angle}deg)`,
+    zIndex: state.value.zIndex,
+  };
 });
 </script>
 
@@ -181,8 +163,13 @@ const elementStyle = computed<CSSProperties>(() => {
   z-index: 100 !important;
 }
 .visual-element.text {
-  /* テキスト要素固有 */
+  /* レイアウトモードでも見えるようにスタイル追加 */
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
   background: transparent;
+  border: 3px solid #000;
+  box-shadow: 0 5px 15px rgba(33, 147, 176, 0.4);
 }
 .rotate-handle {
   position: absolute;
@@ -195,7 +182,6 @@ const elementStyle = computed<CSSProperties>(() => {
   right: -12px;
   cursor: alias;
 }
-/* コントロールパネル */
 .controls {
   position: fixed;
   top: 16px;

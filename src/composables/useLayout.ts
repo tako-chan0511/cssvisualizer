@@ -1,3 +1,4 @@
+// src/composables/useLayout.ts
 import { ref, reactive, computed, type CSSProperties } from "vue";
 
 // Composable for managing layout (Flexbox & CSS Grid) state and styles
@@ -32,8 +33,13 @@ export const layoutCategories: LayoutCategory[] = [
 ];
 
 export function useLayout() {
-  // レイアウト方式: 標準方式 | コンテナレイアウト　| 絶対配置系
+  // レイアウト方式: flow | flex | grid | table | float | abs
   const layoutSystem = ref<string>("flow");
+
+  // 標準フロー時の display モード
+  const flowState = reactive({
+    display: "block" as "block" | "inline",
+  });
 
   // Flexbox 用ステート
   const flexState = reactive({
@@ -54,79 +60,79 @@ export function useLayout() {
     columnGap: 10,
   });
 
-  // useLayout.ts
-  const flowState = reactive({
-    display: "block" as "block" | "inline",
-  });
+  /**
+   * 標準フロー (block/inline) の display を切り替える
+   */
+  function setLayoutDisplay(mode: "block" | "inline") {
+    flowState.display = mode;
+  }
 
   // サンドボックスの style 属性を計算
   const sandboxStyle = computed<CSSProperties>(() => {
-    // useLayout.ts (sandboxStyle 内)
-    if (layoutSystem.value === "flow") {
-      return {
-        display: flowState.display, // block か inline
-        // block のときは幅100%など、必要なら追加プロパティも
-      };
+    switch (layoutSystem.value) {
+      case "flow":
+        return {
+          display: flowState.display,
+          width: "100%",
+        };
+      case "flex":
+        return {
+          display: "flex",
+          height: `${flexState.containerHeight}%`,
+          flexDirection: flexState.direction as any,
+          justifyContent: flexState.justifyContent,
+          alignItems: flexState.alignItems,
+          flexWrap: flexState.flexWrap as any,
+          gap: `${flexState.gap}px`,
+        };
+      case "grid":
+        return {
+          display: "grid",
+          gridTemplateColumns: gridState.columns,
+          gridTemplateRows: gridState.rows,
+          gap: `${gridState.gap}px`,
+          rowGap: `${gridState.rowGap}px`,
+          columnGap: `${gridState.columnGap}px`,
+        };
+      case "float":
+        return {
+          display: "block",
+          // float は子要素で個別指定
+        };
+      case "table":
+        return {
+          display: "table",
+          width: "100%",
+        };
+      case "abs":
+        return {
+          position: "relative",
+        };
+      default:
+        return {};
     }
-    if (layoutSystem.value === "flex") {
-      return {
-        display: "flex",
-        height: `${flexState.containerHeight}%`,
-        flexDirection: flexState.direction as any,
-        justifyContent: flexState.justifyContent,
-        alignItems: flexState.alignItems,
-        flexWrap: flexState.flexWrap as any,
-        gap: `${flexState.gap}px`,
-      };
-    }
-    // CSS Grid モード
-    return {
-      display: "grid",
-      gridTemplateColumns: gridState.columns,
-      gridTemplateRows: gridState.rows,
-      gap: `${gridState.gap}px`,
-      rowGap: `${gridState.rowGap}px`,
-      columnGap: `${gridState.columnGap}px`,
-    };
   });
 
   // Container の CSS コードを生成
   const generatedLayoutCss = computed(() => {
-    // useLayout.ts (generatedLayoutCss 内)
-    if (layoutSystem.value === "flow") {
-      return `#sandbox {
-  display: ${flowState.display};
-}`;
+    switch (layoutSystem.value) {
+      case "flow":
+        return `#sandbox {\n  display: ${flowState.display};\n}`;
+      case "flex":
+        return `#sandbox {\n  display: flex;\n  height: ${flexState.containerHeight}%;\n  flex-direction: ${flexState.direction};\n  justify-content: ${flexState.justifyContent};\n  align-items: ${flexState.alignItems};\n  flex-wrap: ${flexState.flexWrap};\n  gap: ${flexState.gap}px;\n}`;
+      default:
+        return `#sandbox {\n  display: grid;\n  grid-template-columns: ${gridState.columns};\n  grid-template-rows: ${gridState.rows};\n  gap: ${gridState.gap}px;\n  row-gap: ${gridState.rowGap}px;\n  column-gap: ${gridState.columnGap}px;\n}`;
     }
-
-    if (layoutSystem.value === "flex") {
-      return `#sandbox {
-  display: flex;
-  height: ${flexState.containerHeight}%;
-  flex-direction: ${flexState.direction};
-  justify-content: ${flexState.justifyContent};
-  align-items: ${flexState.alignItems};
-  flex-wrap: ${flexState.flexWrap};
-  gap: ${flexState.gap}px;
-}`;
-    }
-    return `#sandbox {
-  display: grid;
-  grid-template-columns: ${gridState.columns};
-  grid-template-rows: ${gridState.rows};
-  gap: ${gridState.gap}px;
-  row-gap: ${gridState.rowGap}px;
-  column-gap: ${gridState.columnGap}px;
-}`;
   });
 
   return {
     layoutSystem,
-    flowState,          // ← これを追加
+    flowState,
+    setLayoutDisplay,
     flexState,
     gridState,
     sandboxStyle,
     generatedLayoutCss,
-    layoutCategories, // ← これを追加！
+    layoutCategories,
   };
 }

@@ -41,6 +41,7 @@ export function useElements() {
       fontFamily: 'sans-serif',
       fontWeight: 'normal',
       fontStyle: 'normal',
+      display: 'block', // ← 初期表示を追加
     };
 
     if (type === 'text') {
