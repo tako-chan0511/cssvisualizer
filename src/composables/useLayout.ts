@@ -37,6 +37,7 @@ export function useLayout() {
   const multicolState = reactive({
     count: 3, // column-count: 何列に分割するか
     gap: 16, // column-gap: カラム間の隙間(px)
+    fill: 'balance' as 'balance' | 'auto'   // ← 追加
   });
   // レイアウト方式: flow | flex | grid | table | float | abs
   const layoutSystem = ref<string>("flow");
@@ -84,6 +85,7 @@ export function useLayout() {
         return {
           columnCount: multicolState.count,
           columnGap: `${multicolState.gap}px`,
+          columnFill:   multicolState.fill,
         };
       case "flex":
         return {
@@ -133,6 +135,7 @@ export function useLayout() {
           `/* マルチカラム */\n#sandbox {\n` +
           `  column-count: ${multicolState.count};\n` +
           `  column-gap: ${multicolState.gap}px;\n` +
+          `  column-fill: ${multicolState.fill};\n` +
           `}`
         );
       case "flex":
