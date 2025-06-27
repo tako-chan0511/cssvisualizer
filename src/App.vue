@@ -33,6 +33,7 @@
           :is-layout-mode="editMode === 'layout'"
           :layout-system="layoutSystem"
           :float-state="floatState"
+          :multicol-state="multicolState"
           @select="selectElement"
           @update="handleElementUpdate"
           @clone="cloneElement"

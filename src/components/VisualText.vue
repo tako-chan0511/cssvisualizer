@@ -8,170 +8,137 @@
     :style="elementStyle"
     @mousedown.stop.prevent="onSelect"
   >
-    {{ props.state.content }}
+    {{ textContent }}
     <div v-if="props.isSelected && !props.isLayoutMode" class="rotate-handle"></div>
   </div>
 
-  <!-- 個別編集モード時のコントロールパネル -->
+  <!-- コントロールパネル -->
   <div v-if="props.isSelected && !props.isLayoutMode" class="controls">
-    <label>
-      テキスト:
+    <label>テキスト:
       <input type="text" v-model="textContent" />
     </label>
-    <label>
-      フォントサイズ: {{ fontSize }}px
+    <label>フォントサイズ: {{ fontSize }}px
       <input type="range" v-model.number="fontSize" min="10" max="72" />
     </label>
-    <label>
-      フォント:
-      <select v-model="fontFamily">
-        <option value="sans-serif">sans-serif</option>
-        <option value="serif">serif</option>
-        <option value="monospace">monospace</option>
-        <option value="cursive">cursive</option>
-      </select>
-    </label>
-    <label>
-      太さ:
-      <select v-model="fontWeight">
-        <option value="normal">normal</option>
-        <option value="bold">bold</option>
-        <option value="bolder">bolder</option>
-        <option value="lighter">lighter</option>
-      </select>
-    </label>
-    <label>
-      スタイル:
-      <select v-model="fontStyle">
-        <option value="normal">normal</option>
-        <option value="italic">italic</option>
-        <option value="oblique">oblique</option>
-      </select>
-    </label>
-    <label>
-      文字色:
+    <label>文字色:
       <input type="color" v-model="fontColor" />
     </label>
-    <label>
-      背景色:
+    <label>背景色:
       <input type="color" v-model="bgColor" />
     </label>
-    <label>
-      幅: {{ width }}px
+    <label>幅: {{ width }}px
       <input type="range" v-model.number="width" min="50" max="600" />
     </label>
-    <label>
-      高さ: {{ height }}px
+    <label>高さ: {{ height }}px
       <input type="range" v-model.number="height" min="20" max="300" />
     </label>
-    <label>
-      X: {{ x }}px
+    <label>X: {{ x }}px
       <input type="range" v-model.number="x" :min="-300" :max="300" />
     </label>
-    <label>
-      Y: {{ y }}px
+    <label>Y: {{ y }}px
       <input type="range" v-model.number="y" :min="-300" :max="300" />
     </label>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, toRefs, type CSSProperties } from 'vue';
-import type { ElementState } from '../types';
+import { ref, watch, computed, toRefs, type CSSProperties } from 'vue'
+import type { ElementState } from '../types'
 
 const props = defineProps<{
-  state: ElementState;
-  isSelected: boolean;
-  isLayoutMode: boolean;
-  layoutSystem: string;
-  floatState: { direction: 'left' | 'right'; gap: number };
-}>();
-const { state, isSelected, isLayoutMode, layoutSystem, floatState } = toRefs(props);
-const emit = defineEmits<{ (e: 'select', id: string): void }>();
+  state: ElementState
+  isSelected: boolean
+  isLayoutMode: boolean
+  layoutSystem: string
+  floatState: { direction: 'left' | 'right'; gap: number }
+}>()
+const { state, isLayoutMode, layoutSystem, floatState } = toRefs(props)
+const emit = defineEmits<{ (e: 'select', id: string): void }>()
 
-// ローカルバインド用 refs
-const textContent = ref(state.value.content);
-const fontSize    = ref(state.value.fontSize  ?? 24);
-const fontColor   = ref(state.value.fontColor ?? '#333333');
-const bgColor     = ref(state.value.backgroundColor ?? '#ffffff');
-const width       = ref(state.value.width);
-const height      = ref(state.value.height);
-const x           = ref(state.value.x);
-const y           = ref(state.value.y);
-const fontFamily  = ref(state.value.fontFamily ?? 'sans-serif');
-const fontWeight  = ref(state.value.fontWeight ?? 'normal');
-const fontStyle   = ref(state.value.fontStyle ?? 'normal');
+// local
+const textContent = ref(state.value.content)
+const fontSize    = ref(state.value.fontSize ?? 24)
+const fontColor   = ref(state.value.fontColor ?? '#333333')
+const bgColor     = ref(state.value.backgroundColor ?? '#ffffff')
+const width       = ref(state.value.width)
+const height      = ref(state.value.height)
+const x           = ref(state.value.x)
+const y           = ref(state.value.y)
 
-// state への反映
-watch(textContent, v => state.value.content = v);
-watch(fontSize,    v => state.value.fontSize = v);
-watch(fontColor,   v => state.value.fontColor = v);
-watch(bgColor,     v => state.value.backgroundColor = v);
-watch(width,       v => state.value.width = v);
-watch(height,      v => state.value.height = v);
-watch(x,           v => state.value.x = v);
-watch(y,           v => state.value.y = v);
-watch(fontFamily,  v => state.value.fontFamily = v);
-watch(fontWeight,  v => state.value.fontWeight = v);
-watch(fontStyle,   v => state.value.fontStyle = v);
+// watch → state
+watch(textContent, v => state.value.content = v)
+watch(fontSize,    v => state.value.fontSize = v)
+watch(fontColor,   v => state.value.fontColor = v)
+watch(bgColor,     v => state.value.backgroundColor = v)
+watch(width,       v => state.value.width = v)
+watch(height,      v => state.value.height = v)
+watch(x,           v => state.value.x = v)
+watch(y,           v => state.value.y = v)
 
-// 選択ハンドラ
+// 表示／選択
 function onSelect() {
-  if (!isLayoutMode.value) emit('select', state.value.id);
+  if (!isLayoutMode.value) emit('select', state.value.id)
 }
 
-// 要素スタイル
+// スタイル計算
 const elementStyle = computed((): CSSProperties => {
-  // Float でも中央配置を維持できる inline-flex/flex を使う
-  const displayType = state.value.display === 'inline' ? 'inline-flex' : 'flex';
-  // 共通 base スタイル
+  // ベース
   const base: CSSProperties = {
-    display:        displayType,
-    justifyContent: 'center',
-    alignItems:     'center',
-    color:          state.value.fontColor,
-    fontSize:       `${state.value.fontSize}px`,
+    color:          fontColor.value,
+    fontSize:       `${fontSize.value}px`,
     fontFamily:     state.value.fontFamily,
     fontWeight:     state.value.fontWeight,
     fontStyle:      state.value.fontStyle,
-    backgroundColor: state.value.backgroundColor,
+    backgroundColor: bgColor.value,
     textAlign:      'center',
     wordBreak:      'break-word',
-    width:          `${state.value.width}px`,  
-    height:         `${state.value.height}px`,
     boxSizing:      'border-box',
-  };
+    width:          `${width.value}px`,
+    height:         `${height.value}px`,
+    display:        state.value.display === 'inline' ? 'inline-flex' : 'flex',
+    justifyContent: 'center',
+    alignItems:     'center',
+  }
 
   if (isLayoutMode.value) {
-    // レイアウトモード時は枠を付与
-    const layoutBase: CSSProperties = {
-      ...base,
-      border: '3px solid #000',
-    };
-    // Float モードなら float と隙間を追加
+    // ① Float レイアウト
     if (layoutSystem.value === 'float') {
       return {
-        ...layoutBase,
-        float:  floatState.value.direction,
+        ...base,
+        display: 'block',
+        border: '3px solid #000',
+        float: floatState.value.direction,
         margin: floatState.value.direction === 'left'
           ? `0 ${floatState.value.gap}px 0 0`
           : `0 0 0 ${floatState.value.gap}px`,
-      };
+      }
     }
-    // その他のレイアウトはそのまま
-    return layoutBase;
+    // ② Table レイアウト
+    if (layoutSystem.value === 'table') {
+      return {
+        ...base,
+        display: 'table-cell',
+        verticalAlign: 'middle',
+        border: '3px solid #000',
+      }
+    }
+    // ③ その他（flex/grid/flow/multicol/abs）
+    return {
+      ...base,
+      border: '3px solid #000',
+    }
   }
 
-  // 個別編集モード: 絶対配置＋移動＋回転
+  // 個別編集モード：絶対配置＋移動＋回転
   return {
     ...base,
     position:  'absolute',
     left:      '0px',
     top:       '0px',
-    transform: `translate(${state.value.x}px, ${state.value.y}px) rotate(${state.value.angle}deg)`,
+    transform: `translate(${x.value}px, ${y.value}px) rotate(${state.value.angle}deg)`,
     zIndex:    state.value.zIndex,
-  };
-});
+  }
+})
 </script>
 
 <style scoped>

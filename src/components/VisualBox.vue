@@ -14,24 +14,19 @@
 
   <!-- コントロールパネル -->
   <div v-if="props.isSelected && !props.isLayoutMode" class="controls">
-    <label>
-      幅: {{ width }}px
+    <label>幅: {{ width }}px
       <input type="range" v-model.number="width" min="50" max="600" />
     </label>
-    <label>
-      高さ: {{ height }}px
+    <label>高さ: {{ height }}px
       <input type="range" v-model.number="height" min="50" max="600" />
     </label>
-    <label>
-      背景色:
+    <label>背景色:
       <input type="color" v-model="bgColor" />
     </label>
-    <label>
-      X: {{ x }}px
+    <label>X: {{ x }}px
       <input type="range" v-model.number="x" :min="-300" :max="300" />
     </label>
-    <label>
-      Y: {{ y }}px
+    <label>Y: {{ y }}px
       <input type="range" v-model.number="y" :min="-300" :max="300" />
     </label>
   </div>
@@ -50,74 +45,84 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ (e: 'select', id: string): void }>();
 
-// 双方向バインド用ローカル refs
-const width = ref(props.state.width);
-const height = ref(props.state.height);
+// 双方向バインド用
+const width   = ref(props.state.width);
+const height  = ref(props.state.height);
 const bgColor = ref(props.state.backgroundColor || '#6dd5ed');
-const x = ref(props.state.x);
-const y = ref(props.state.y);
+const x       = ref(props.state.x);
+const y       = ref(props.state.y);
 
-// コントロール側の変更を state に反映
-watch(width, val => (props.state.width = val));
-watch(height, val => (props.state.height = val));
-watch(bgColor, val => (props.state.backgroundColor = val));
-watch(x, val => (props.state.x = val));
-watch(y, val => (props.state.y = val));
+// コントローラ→state
+watch(width,   v => props.state.width = v);
+watch(height,  v => props.state.height = v);
+watch(bgColor, v => props.state.backgroundColor = v);
+watch(x,       v => props.state.x = v);
+watch(y,       v => props.state.y = v);
+// state→コントローラ
+watch(() => props.state.width,  v => (width.value = v));
+watch(() => props.state.height, v => (height.value = v));
+watch(() => props.state.backgroundColor, v => (bgColor.value = v || '#6dd5ed'));
+watch(() => props.state.x, v => (x.value = v));
+watch(() => props.state.y, v => (y.value = v));
 
-// state 側の変更をコントロールに反映
-watch(() => props.state.width, val => (width.value = val));
-watch(() => props.state.height, val => (height.value = val));
-watch(
-  () => props.state.backgroundColor,
-  val => (bgColor.value = val || '#6dd5ed')
-);
-watch(() => props.state.x, val => (x.value = val));
-watch(() => props.state.y, val => (y.value = val));
-
-// 要素スタイル
+/** 要素スタイル */
 const elementStyle = computed((): CSSProperties => {
-  // 共通: 常に flex で中央揃え
+  // 1) 個別編集モード以外の共通プロパティはここにまとめる
   const common: CSSProperties = {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: `${props.state.width}px`,     
-    height: `${props.state.height}px`,   
+    width: `${props.state.width}px`,
+    height: `${props.state.height}px`,
     backgroundColor: props.state.backgroundColor,
     boxSizing: 'border-box',
   };
 
+  // 2) レイアウトモード時
   if (props.isLayoutMode) {
-    // Float レイアウト指定時は float と margin のみ追加
+    // 2-1) Float レイアウト
     if (props.layoutSystem === 'float') {
       return {
         ...common,
+        display: 'block',
         float: props.floatState.direction,
         margin: props.floatState.direction === 'left'
           ? `0 ${props.floatState.gap}px 0 0`
           : `0 0 0 ${props.floatState.gap}px`,
       };
     }
-    // それ以外のレイアウトモードでは共通スタイルをそのまま
-    return common;
+    // 2-2) Table レイアウト
+    if (props.layoutSystem === 'table') {
+      return {
+        ...common,
+        display: 'table-cell',
+        verticalAlign: 'middle',
+        textAlign: 'center',
+      };
+    }
+    // 2-3) それ以外（flex/grid/multicol/flow/abs）は flex 中央揃え
+    return {
+      ...common,
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+    };
   }
 
-  // 個別編集モードでは絶対配置と移動・回転を追加
+  // 3) 個別編集モード
   return {
     ...common,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
     position: 'absolute',
     left: '0px',
     top: '0px',
     zIndex: props.state.zIndex,
-    transform: `translate(${props.state.x}px, ${props.state.y}px) rotate(${props.state.angle}deg)`
+    transform: `translate(${props.state.x}px, ${props.state.y}px) rotate(${props.state.angle}deg)`,
   };
 });
 
-// 選択用ハンドラ
+// 選択ハンドラ
 function onSelect() {
-  if (!props.isLayoutMode) {
-    emit('select', props.state.id);
-  }
+  if (!props.isLayoutMode) emit('select', props.state.id);
 }
 </script>
 

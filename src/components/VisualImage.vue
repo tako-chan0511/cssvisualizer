@@ -8,108 +8,114 @@
     :style="elementStyle"
     @mousedown.stop.prevent="onSelect"
   >
-    <img :src="props.state.src" alt="Image" />
+    <img :src="srcValue" alt="Image" />
     <div v-if="props.isSelected && !props.isLayoutMode" class="rotate-handle"></div>
   </div>
 
   <!-- 個別編集モード用コントロールパネル -->
   <div v-if="props.isSelected && !props.isLayoutMode" class="controls">
-    <label>
-      画像URL:
+    <label>画像URL:
       <input type="text" v-model="srcValue" />
     </label>
-    <label>
-      幅: {{ width }}px
+    <label>幅: {{ width }}px
       <input type="range" v-model.number="width" min="50" max="800" />
     </label>
-    <label>
-      高さ: {{ height }}px
+    <label>高さ: {{ height }}px
       <input type="range" v-model.number="height" min="50" max="800" />
     </label>
-    <label>
-      X: {{ x }}px
+    <label>X: {{ x }}px
       <input type="range" v-model.number="x" :min="-400" :max="400" />
     </label>
-    <label>
-      Y: {{ y }}px
+    <label>Y: {{ y }}px
       <input type="range" v-model.number="y" :min="-400" :max="400" />
     </label>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, type CSSProperties } from 'vue';
-import type { ElementState } from '../types';
+import { ref, watch, computed, toRefs, type CSSProperties } from 'vue'
+import type { ElementState } from '../types'
 
 const props = defineProps<{
-  state: ElementState;
-  isSelected: boolean;
-  isLayoutMode: boolean;
-  layoutSystem: string;
-  floatState: { direction: 'left' | 'right'; gap: number };
-}>();
-const emit = defineEmits<{ (e: 'select', id: string): void }>();
+  state: ElementState
+  isSelected: boolean
+  isLayoutMode: boolean
+  layoutSystem: string
+  floatState: { direction: 'left' | 'right'; gap: number }
+}>()
+const { state, isLayoutMode, layoutSystem, floatState } = toRefs(props)
+const emit = defineEmits<{ (e: 'select', id: string): void }>()
 
-// 双方向バインド用 refs
-const srcValue = ref(props.state.src ?? '');
-const width    = ref(props.state.width);
-const height   = ref(props.state.height);
-const x        = ref(props.state.x);
-const y        = ref(props.state.y);
+// 双方向バインド用
+const srcValue = ref(state.value.src || '')
+const width    = ref(state.value.width)
+const height   = ref(state.value.height)
+const x        = ref(state.value.x)
+const y        = ref(state.value.y)
 
-// 親 state に反映
-watch(srcValue, v => props.state.src = v);
-watch(width,    v => props.state.width = v);
-watch(height,   v => props.state.height = v);
-watch(x,        v => props.state.x = v);
-watch(y,        v => props.state.y = v);
+// state への反映
+watch(srcValue, v => state.value.src = v)
+watch(width,    v => state.value.width = v)
+watch(height,   v => state.value.height = v)
+watch(x,        v => state.value.x = v)
+watch(y,        v => state.value.y = v)
 
 // 選択ハンドラ
 function onSelect() {
-  if (!props.isLayoutMode) emit('select', props.state.id);
+  if (!isLayoutMode.value) emit('select', state.value.id)
 }
 
-// 要素スタイル
+// スタイル計算
 const elementStyle = computed((): CSSProperties => {
-  // 共通: フレックスで画像内部中央配置
-  const isInline = props.state.display === 'inline';
-  const common: CSSProperties = {
-    display:        isInline ? 'inline-flex' : 'flex',
+  // ベース：中央揃えのフレックス／インラインフレックス
+  const displayType = state.value.display === 'inline' ? 'inline-flex' : 'flex'
+  const base: CSSProperties = {
+    display:        displayType,
     justifyContent: 'center',
     alignItems:     'center',
-    width:          `${props.state.width}px`,  
-    height:         `${props.state.height}px`,
+    width:          `${width.value}px`,
+    height:         `${height.value}px`,
     overflow:       'hidden',
     boxSizing:      'border-box',
-    border:         props.isLayoutMode ? '3px solid #000' : 'none',
-    boxShadow:      props.isLayoutMode ? '0 5px 15px rgba(33,147,176,0.4)' : 'none',
-  };
-
-  if (props.isLayoutMode) {
-    // Float レイアウト指定時は float と margin のみ追加
-    if (props.layoutSystem === 'float') {
-      return {
-        ...common,
-        float: props.floatState.direction,
-        margin: props.floatState.direction === 'left'
-          ? `0 ${props.floatState.gap}px 0 0`
-          : `0 0 0 ${props.floatState.gap}px`,
-      };
-    }
-    // その他モードなら共通スタイルそのまま
-    return common;
+    // レイアウトモード時は枠を表示
+    border:         isLayoutMode.value ? '3px solid #000' : 'none',
+    boxShadow:      isLayoutMode.value ? '0 5px 15px rgba(33,147,176,0.4)' : 'none',
   }
 
-  // 個別編集モード: 絶対配置＋移動＋回転
+  if (isLayoutMode.value) {
+    // Float レイアウト
+    if (layoutSystem.value === 'float') {
+      return {
+        ...base,
+        display: 'block',
+        float:   floatState.value.direction,
+        margin: floatState.value.direction === 'left'
+          ? `0 ${floatState.value.gap}px 0 0`
+          : `0 0 0 ${floatState.value.gap}px`,
+      }
+    }
+    // Table レイアウト
+    if (layoutSystem.value === 'table') {
+      return {
+        ...base,
+        display:       'table-cell',
+        verticalAlign: 'middle',
+      }
+    }
+    // その他レイアウトモード
+    return base
+  }
+
+  // 個別編集モード：絶対配置＋移動＋回転
   return {
-    ...common,
+    ...base,
     position:  'absolute',
     left:      '0px',
     top:       '0px',
-    transform: `translate(${props.state.x}px, ${props.state.y}px) rotate(${props.state.angle}deg)`,
-    zIndex:    props.state.zIndex,
-  };
-});
+    transform: `translate(${x.value}px, ${y.value}px) rotate(${state.value.angle}deg)`,
+    zIndex:    state.value.zIndex,
+  }
+})
 </script>
 
 <style scoped>
@@ -129,36 +135,28 @@ const elementStyle = computed((): CSSProperties => {
 }
 .rotate-handle {
   position: absolute;
-  width: 20px;
-  height: 20px;
+  width: 20px; height: 20px;
   background-color: #ffc107;
   border: 2px solid white;
   border-radius: 50%;
-  top: -12px;
-  right: -12px;
+  top: -12px; right: -12px;
   cursor: alias;
 }
 .controls {
   position: fixed;
-  top: 16px;
-  right: 16px;
+  top: 16px; right: 16px;
   background: #fafafa;
   border: 1px solid #ddd;
-  padding: 8px;
-  border-radius: 4px;
-  z-index: 1000;
-  font-size: 12px;
-  line-height: 1.4;
+  padding: 8px; border-radius: 4px;
+  z-index: 1000; font-size: 12px; line-height: 1.4;
 }
 .controls label {
-  display: block;
-  margin-bottom: 6px;
+  display: block; margin-bottom: 6px;
 }
 .controls input[type="range"] {
-  width: 120px;
+  width: 120px; vertical-align: middle;
 }
 .controls input[type="text"] {
-  width: 100%;
-  margin-top: 2px;
+  width: 100%; margin-top: 2px;
 }
 </style>
