@@ -165,7 +165,7 @@
           </template>
 
           <!-- Grid モード -->
-          <template v-else>
+          <template v-else-if="layoutSystem === 'grid'">
             <label>
               grid-template-columns:
               <input
