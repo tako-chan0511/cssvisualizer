@@ -45,6 +45,8 @@ const props = defineProps<{
   state: ElementState;
   isSelected: boolean;
   isLayoutMode: boolean;
+  layoutSystem: string;
+  floatState: { direction: 'left' | 'right'; gap: number };
 }>();
 const emit = defineEmits<{ (e: 'select', id: string): void }>();
 
@@ -69,36 +71,48 @@ function onSelect() {
 
 // 要素スタイル
 const elementStyle = computed((): CSSProperties => {
+  // 共通: フレックスで画像内部中央配置
   const isInline = props.state.display === 'inline';
-  const base: CSSProperties = {
-    display: isInline ? 'inline-flex' : 'flex',
+  const common: CSSProperties = {
+    display:        isInline ? 'inline-flex' : 'flex',
     justifyContent: 'center',
-    alignItems: 'center',
-    width: `${props.state.width}px`,  
-    height: `${props.state.height}px`,
-    overflow: 'hidden',
-    boxSizing: 'border-box',
-    border: props.isLayoutMode ? '3px solid #000' : 'none',
-    boxShadow: props.isLayoutMode ? '0 5px 15px rgba(33,147,176,0.4)' : 'none',
+    alignItems:     'center',
+    width:          `${props.state.width}px`,  
+    height:         `${props.state.height}px`,
+    overflow:       'hidden',
+    boxSizing:      'border-box',
+    border:         props.isLayoutMode ? '3px solid #000' : 'none',
+    boxShadow:      props.isLayoutMode ? '0 5px 15px rgba(33,147,176,0.4)' : 'none',
   };
+
   if (props.isLayoutMode) {
-    return base;
+    // Float レイアウト指定時は float と margin のみ追加
+    if (props.layoutSystem === 'float') {
+      return {
+        ...common,
+        float: props.floatState.direction,
+        margin: props.floatState.direction === 'left'
+          ? `0 ${props.floatState.gap}px 0 0`
+          : `0 0 0 ${props.floatState.gap}px`,
+      };
+    }
+    // その他モードなら共通スタイルそのまま
+    return common;
   }
+
+  // 個別編集モード: 絶対配置＋移動＋回転
   return {
-    ...base,
-    position: 'absolute',
-    left: '0px',
-    top: '0px',
+    ...common,
+    position:  'absolute',
+    left:      '0px',
+    top:       '0px',
     transform: `translate(${props.state.x}px, ${props.state.y}px) rotate(${props.state.angle}deg)`,
-    zIndex: props.state.zIndex,
+    zIndex:    props.state.zIndex,
   };
 });
 </script>
 
 <style scoped>
-.visual-element.image {
-  /* 内部 img をフルサイズに */
-}
 .visual-element.image img {
   width: 100%;
   height: 100%;

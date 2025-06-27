@@ -45,6 +45,8 @@ const props = defineProps<{
   state: ElementState;
   isSelected: boolean;
   isLayoutMode: boolean;
+  layoutSystem: string;
+  floatState: { direction: 'left' | 'right'; gap: number };
 }>();
 const emit = defineEmits<{ (e: 'select', id: string): void }>();
 
@@ -74,15 +76,33 @@ watch(() => props.state.y, val => (y.value = val));
 
 // 要素スタイル
 const elementStyle = computed((): CSSProperties => {
+  // 共通: 常に flex で中央揃え
   const common: CSSProperties = {
-    display: props.state.display,         // ← display を追加
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
     width: `${props.state.width}px`,     
     height: `${props.state.height}px`,   
     backgroundColor: props.state.backgroundColor,
+    boxSizing: 'border-box',
   };
+
   if (props.isLayoutMode) {
+    // Float レイアウト指定時は float と margin のみ追加
+    if (props.layoutSystem === 'float') {
+      return {
+        ...common,
+        float: props.floatState.direction,
+        margin: props.floatState.direction === 'left'
+          ? `0 ${props.floatState.gap}px 0 0`
+          : `0 0 0 ${props.floatState.gap}px`,
+      };
+    }
+    // それ以外のレイアウトモードでは共通スタイルをそのまま
     return common;
   }
+
+  // 個別編集モードでは絶対配置と移動・回転を追加
   return {
     ...common,
     position: 'absolute',
@@ -110,7 +130,6 @@ function onSelect() {
   font-weight: bold;
   cursor: grab;
   touch-action: none;
-  box-sizing: border-box;
   border: 3px solid transparent;
   transition: all 0.2s;
   flex-shrink: 0;

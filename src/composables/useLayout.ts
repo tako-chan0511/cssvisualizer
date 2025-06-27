@@ -37,7 +37,7 @@ export function useLayout() {
   const multicolState = reactive({
     count: 3, // column-count: 何列に分割するか
     gap: 16, // column-gap: カラム間の隙間(px)
-    fill: 'balance' as 'balance' | 'auto'   // ← 追加
+    fill: "balance" as "balance" | "auto", // ← 追加
   });
   // レイアウト方式: flow | flex | grid | table | float | abs
   const layoutSystem = ref<string>("flow");
@@ -72,6 +72,11 @@ export function useLayout() {
   function setLayoutDisplay(mode: "block" | "inline") {
     flowState.display = mode;
   }
+  // ── ③ 浮動レイアウト用ステート ──
+  const floatState = reactive({
+    direction: "left" as "left" | "right",
+    gap: 10,
+  });
 
   // サンドボックスの style 属性を計算
   const sandboxStyle = computed<CSSProperties>(() => {
@@ -85,7 +90,7 @@ export function useLayout() {
         return {
           columnCount: multicolState.count,
           columnGap: `${multicolState.gap}px`,
-          columnFill:   multicolState.fill,
+          columnFill: multicolState.fill,
         };
       case "flex":
         return {
@@ -108,8 +113,7 @@ export function useLayout() {
         };
       case "float":
         return {
-          display: "block",
-          // float は子要素で個別指定
+          display: flowState.display,
         };
       case "table":
         return {
@@ -138,8 +142,28 @@ export function useLayout() {
           `  column-fill: ${multicolState.fill};\n` +
           `}`
         );
+      case "float":
+        return [
+          "/* Float レイアウト */",
+          "#sandbox > * {",
+          `  float: ${floatState.direction};`,
+          `  margin-${floatState.direction === "left" ? "right" : "left"}: ${
+            floatState.gap
+          }px;`,
+          "}",
+        ].join("\n");
       case "flex":
         return `#sandbox {\n  display: flex;\n  height: ${flexState.containerHeight}%;\n  flex-direction: ${flexState.direction};\n  justify-content: ${flexState.justifyContent};\n  align-items: ${flexState.alignItems};\n  flex-wrap: ${flexState.flexWrap};\n  gap: ${flexState.gap}px;\n}`;
+      case "float":
+        return (
+          `/* Float レイアウト */\n` +
+          `#sandbox > * {\n` +
+          `  float: ${floatState.direction};\n` +
+          `  margin-${floatState.direction === "left" ? "right" : "left"}: ${
+            floatState.gap
+          }px;\n` +
+          `}`
+        );
       default:
         return `#sandbox {\n  display: grid;\n  grid-template-columns: ${gridState.columns};\n  grid-template-rows: ${gridState.rows};\n  gap: ${gridState.gap}px;\n  row-gap: ${gridState.rowGap}px;\n  column-gap: ${gridState.columnGap}px;\n}`;
     }
@@ -148,9 +172,10 @@ export function useLayout() {
   return {
     layoutSystem,
     flowState,
-    multicolState,       // ← これを返す
+    multicolState, // ← これを返す
     setLayoutDisplay,
     flexState,
+    floatState, // ← ここに追加
     gridState,
     sandboxStyle,
     generatedLayoutCss,

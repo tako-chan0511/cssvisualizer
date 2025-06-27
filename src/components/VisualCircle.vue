@@ -9,7 +9,10 @@
     @mousedown.stop.prevent="onSelect"
   >
     {{ props.state.content }}
-    <div v-if="props.isSelected && !props.isLayoutMode" class="rotate-handle"></div>
+    <div
+      v-if="props.isSelected && !props.isLayoutMode"
+      class="rotate-handle"
+    ></div>
   </div>
 
   <!-- 個別編集モード用コントロールパネル -->
@@ -38,20 +41,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, type CSSProperties } from 'vue';
-import type { ElementState } from '../types';
+import { ref, watch, computed, type CSSProperties } from "vue";
+import type { ElementState } from "../types";
 
 const props = defineProps<{
   state: ElementState;
   isSelected: boolean;
   isLayoutMode: boolean;
+  layoutSystem: string;
+  floatState: { direction: "left" | "right"; gap: number };
 }>();
-const emit = defineEmits<{ (e: 'select', id: string): void }>();
+const emit = defineEmits<{ (e: "select", id: string): void }>();
 
 // ローカル双方向バインド用
 const width = ref(props.state.width);
 const height = ref(props.state.height);
-const bgColor = ref(props.state.backgroundColor ?? '#ffffff');
+const bgColor = ref(props.state.backgroundColor ?? "#ffffff");
 const x = ref(props.state.x);
 const y = ref(props.state.y);
 
@@ -66,39 +71,51 @@ watch([width, height, bgColor, x, y], ([w, h, bg, xx, yy]) => {
 
 // 選択ハンドラ
 function onSelect() {
-  if (!props.isLayoutMode) emit('select', props.state.id);
+  if (!props.isLayoutMode) emit("select", props.state.id);
 }
 
 // 要素スタイル
 const elementStyle = computed((): CSSProperties => {
-  // display: inline-flex or flex でサイズを保持しつつ中央配置
-  const displayType = props.state.display === 'inline' ? 'inline-flex' : 'flex';
-  const base: CSSProperties = {
-    display: displayType,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: `${props.state.width}px`,
-    height: `${props.state.height}px`,
+  // 共通: 常に flex で中央揃え
+  const common: CSSProperties = {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    width: `${props.state.width}px`,     
+    height: `${props.state.height}px`,   
     backgroundColor: props.state.backgroundColor,
-    borderRadius: '50%',
+    borderRadius: "50%",
     color: props.state.fontColor,
     fontSize: `${props.state.fontSize}px`,
     fontFamily: props.state.fontFamily,
     fontWeight: props.state.fontWeight,
     fontStyle: props.state.fontStyle,
-    boxSizing: 'border-box',
-    zIndex: props.state.zIndex,
+    boxSizing: "border-box",
   };
+
   if (props.isLayoutMode) {
-    // レイアウトモードでは絶対配置を外し、通常フローまたは inline に従う
-    return base;
+    // Float レイアウト指定時は float と margin のみ追加
+    if (props.layoutSystem === "float") {
+      return {
+        ...common,
+        float: props.floatState.direction,
+        margin:
+          props.floatState.direction === "left"
+            ? `0 ${props.floatState.gap}px 0 0`
+            : `0 0 0 ${props.floatState.gap}px`,
+      };
+    }
+    // それ以外のレイアウトモードでは共通スタイルをそのまま
+    return common;
   }
+
   // 個別編集モード: 絶対配置＋移動＋回転
   return {
-    ...base,
-    position: 'absolute',
-    left: '0px',
-    top: '0px',
+    ...common,
+    position: "absolute",
+    left: "0px",
+    top: "0px",
+    zIndex: props.state.zIndex,
     transform: `translate(${props.state.x}px, ${props.state.y}px) rotate(${props.state.angle}deg)`,
   };
 });
@@ -116,8 +133,8 @@ const elementStyle = computed((): CSSProperties => {
   box-shadow: 0 0 20px rgba(255, 193, 7, 0.8);
 }
 .visual-element.circle {
+  /* 円の輪郭は elementStyle の backgroundColor で制御 */
   border: 3px solid #000;
-  box-shadow: 0 5px 15px rgba(33, 147, 176, 0.4);
 }
 .rotate-handle {
   position: absolute;

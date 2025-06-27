@@ -31,6 +31,8 @@
           :state="el"
           :is-selected="selectedElementId === el.id"
           :is-layout-mode="editMode === 'layout'"
+          :layout-system="layoutSystem"
+          :float-state="floatState"
           @select="selectElement"
           @update="handleElementUpdate"
           @clone="cloneElement"
@@ -79,6 +81,26 @@
                 />
                 inline</label
               >
+            </label>
+          </template>
+
+          <!-- float 用 control -->
+          <template v-else-if="layoutSystem === 'float'">
+            <label>
+              Float 方向:
+              <select v-model="floatState.direction">
+                <option value="left">left</option>
+                <option value="right">right</option>
+              </select>
+            </label>
+            <label>
+              隙間 (px): {{ floatState.gap }}
+              <input
+                type="range"
+                v-model.number="floatState.gap"
+                min="0"
+                max="50"
+              />
             </label>
           </template>
 
@@ -331,10 +353,11 @@ const {
   flowState,
   flexState,
   gridState,
+  multicolState, // ← 追加！
+  floatState,
   sandboxStyle,
   generatedLayoutCss,
   layoutCategories,
-  multicolState,    // ← 追加！
 } = useLayout();
 // flowState.display を Ref として取り出す
 const { display: flowDisplay } = toRefs(flowState);
@@ -353,7 +376,8 @@ const {
   flexState,
   gridState,
   layoutSystem,
-  toRefs(flowState).display
+  toRefs(flowState).display,
+  floatState
 );
 
 // 「block/inline」が変わったら、全要素の state.display も一括更新

@@ -83,8 +83,10 @@ const props = defineProps<{
   state: ElementState;
   isSelected: boolean;
   isLayoutMode: boolean;
+  layoutSystem: string;
+  floatState: { direction: "left" | "right"; gap: number };
 }>();
-const emit = defineEmits<{ (e: 'select', id: string): void }>();
+const emit = defineEmits<{ (e: "select", id: string): void }>();
 
 // 双方向バインド用 refs
 const width = ref(props.state.width);
@@ -94,9 +96,9 @@ const fontSize = ref(props.state.fontSize ?? 16);
 const fontColor = ref(props.state.fontColor ?? "#000000");
 const x = ref(props.state.x);
 const y = ref(props.state.y);
-const fontFamily = ref(props.state.fontFamily ?? 'sans-serif');
-const fontWeight = ref(props.state.fontWeight ?? 'normal');
-const fontStyle = ref(props.state.fontStyle ?? 'normal');
+const fontFamily = ref(props.state.fontFamily ?? "sans-serif");
+const fontWeight = ref(props.state.fontWeight ?? "normal");
+const fontStyle = ref(props.state.fontStyle ?? "normal");
 
 // state へ反映
 watch(width, v => props.state.width = v);
@@ -112,12 +114,13 @@ watch(fontStyle, v => props.state.fontStyle = v);
 
 // 選択ハンドラ
 function onSelect() {
-  if (!props.isLayoutMode) emit('select', props.state.id);
+  if (!props.isLayoutMode) emit("select", props.state.id);
 }
 
 // 要素スタイル
 const elementStyle = computed((): CSSProperties => {
-  const base: CSSProperties = {
+  // 共通: フレックスで中央揃え
+  const common: CSSProperties = {
     display: props.state.display === 'inline' ? 'inline-flex' : 'flex',
     justifyContent: 'center',
     alignItems: 'center',
@@ -127,18 +130,31 @@ const elementStyle = computed((): CSSProperties => {
     fontWeight: props.state.fontWeight,
     fontStyle: props.state.fontStyle,
     backgroundColor: props.state.backgroundColor,
-    width: `${props.state.width}px`,
+    width: `${props.state.width}px`,  
     height: `${props.state.height}px`,
-    border: props.isLayoutMode ? '3px solid #000' : 'none',
-    boxShadow: props.isLayoutMode ? '0 5px 15px rgba(33, 147, 176, 0.4)' : 'none',
     borderRadius: '4px',
     boxSizing: 'border-box',
+    border: props.isLayoutMode ? '3px solid #000' : 'none',
+    boxShadow: props.isLayoutMode ? '0 5px 15px rgba(33, 147, 176, 0.4)' : 'none',
     cursor: 'pointer',
     userSelect: 'none',
   };
-  if (props.isLayoutMode) return base;
+
+  if (props.isLayoutMode) {
+    if (props.layoutSystem === 'float') {
+      return {
+        ...common,
+        float: props.floatState.direction,
+        margin: props.floatState.direction === 'left'
+          ? `0 ${props.floatState.gap}px 0 0`
+          : `0 0 0 ${props.floatState.gap}px`,
+      };
+    }
+    return common;
+  }
+
   return {
-    ...base,
+    ...common,
     position: 'absolute',
     left: '0px',
     top: '0px',
@@ -150,14 +166,11 @@ const elementStyle = computed((): CSSProperties => {
 
 <style scoped>
 .visual-element.button {
-  /* レイアウトモードでも見えるようにスタイル追加 */
-  /* インライン配置かフレックス配置で中央揃え */
+  /* 共通の flex 中央揃えは elementStyle で設定 */
 }
-
 .visual-element.selected {
   outline: 2px solid #ffc107;
 }
-
 .rotate-handle {
   position: absolute;
   width: 20px;
@@ -169,7 +182,6 @@ const elementStyle = computed((): CSSProperties => {
   right: -12px;
   cursor: alias;
 }
-
 .controls {
   position: fixed;
   top: 16px;
@@ -182,17 +194,14 @@ const elementStyle = computed((): CSSProperties => {
   font-size: 12px;
   line-height: 1.4;
 }
-
 .controls label {
   display: block;
   margin-bottom: 6px;
 }
-
 .controls input[type="range"] {
   width: 120px;
   vertical-align: middle;
 }
-
 .controls input[type="color"],
 .controls input[type="text"] {
   width: 100%;
