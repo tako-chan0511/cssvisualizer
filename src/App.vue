@@ -305,19 +305,24 @@ const {
 // ──────── ③ useLayout を呼んで、grid/flex と CSS 生成 ────────
 //     → ここで generatedLayoutCss も受け取る
 const {
-  layoutSystem, 
-  flowState, 
-  flexState, 
-  gridState, 
-  sandboxStyle, 
-  generatedLayoutCss, 
-  layoutCategories 
+  layoutSystem,
+  flowState,
+  flexState,
+  gridState,
+  sandboxStyle,
+  generatedLayoutCss,
+  layoutCategories
 } = useLayout();
 // flowState.display を Ref として取り出す
 const { display: flowDisplay } = toRefs(flowState);
 
 // ──────── ④ useCssGenerator で個別要素用の CSS 生成 ────────
-const { generatedIndividualCss, updateElementFromCss, copyCss } =
+const { 
+  selectedElement: cssSelectedElement, 
+  generatedIndividualCss, 
+  generatedLayoutCss: layoutCss,
+   updateElementFromCss, 
+   copyCss } =
   useCssGenerator(
     elements,
     selectedElementId,
@@ -325,8 +330,29 @@ const { generatedIndividualCss, updateElementFromCss, copyCss } =
     flexState,
     gridState,
     layoutSystem,
-    flowDisplay
+    toRefs(flowState).display
   );
+
+  // 「block/inline」が変わったら、全要素の state.display も一括更新
+ watch(
+   () => flowState.display,
+   (newDisp) => {
+     if (layoutSystem.value === 'flow') {
+       elements.value.forEach(el => el.display = newDisp);
+     }
+   }
+ );
+ // 併せて、flowモードに切り替わったときも display を反映
+ watch(
+   () => layoutSystem.value,
+   (mode) => {
+     if (mode === 'flow') {
+       elements.value.forEach(el => el.display = flowState.display);
+     }
+   }
+ );
+
+
 
 // ② interact.js ロジックを composable に移譲
 useInteract({
