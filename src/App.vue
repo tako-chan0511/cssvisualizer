@@ -82,6 +82,28 @@
             </label>
           </template>
 
+          <!-- src/App.vue のレイアウトパネル内 -->
+          <div v-if="layoutSystem === 'multicol'" class="multicol-controls">
+            <label>
+              カラム数: {{ multicolState.count }}
+              <input
+                type="number"
+                v-model.number="multicolState.count"
+                min="1"
+                max="10"
+              />
+            </label>
+            <label>
+              カラム間ギャップ: {{ multicolState.gap }}px
+              <input
+                type="range"
+                v-model.number="multicolState.gap"
+                min="0"
+                max="100"
+              />
+            </label>
+          </div>
+
           <!-- Flex モード -->
           <template v-if="layoutSystem === 'flex'">
             <label>
@@ -256,8 +278,8 @@
 </template>
 
 <script setup lang="ts">
-import { toRefs } from 'vue';
-import { useCssGenerator } from './composables/useCssGenerator';
+import { toRefs } from "vue";
+import { useCssGenerator } from "./composables/useCssGenerator";
 import {
   ref,
   computed,
@@ -311,48 +333,47 @@ const {
   gridState,
   sandboxStyle,
   generatedLayoutCss,
-  layoutCategories
+  layoutCategories,
+  multicolState,    // ← 追加！
 } = useLayout();
 // flowState.display を Ref として取り出す
 const { display: flowDisplay } = toRefs(flowState);
 
 // ──────── ④ useCssGenerator で個別要素用の CSS 生成 ────────
-const { 
-  selectedElement: cssSelectedElement, 
-  generatedIndividualCss, 
+const {
+  selectedElement: cssSelectedElement,
+  generatedIndividualCss,
   generatedLayoutCss: layoutCss,
-   updateElementFromCss, 
-   copyCss } =
-  useCssGenerator(
-    elements,
-    selectedElementId,
-    editMode, // ← 先に宣言しておいた editMode を渡す
-    flexState,
-    gridState,
-    layoutSystem,
-    toRefs(flowState).display
-  );
+  updateElementFromCss,
+  copyCss,
+} = useCssGenerator(
+  elements,
+  selectedElementId,
+  editMode, // ← 先に宣言しておいた editMode を渡す
+  flexState,
+  gridState,
+  layoutSystem,
+  toRefs(flowState).display
+);
 
-  // 「block/inline」が変わったら、全要素の state.display も一括更新
- watch(
-   () => flowState.display,
-   (newDisp) => {
-     if (layoutSystem.value === 'flow') {
-       elements.value.forEach(el => el.display = newDisp);
-     }
-   }
- );
- // 併せて、flowモードに切り替わったときも display を反映
- watch(
-   () => layoutSystem.value,
-   (mode) => {
-     if (mode === 'flow') {
-       elements.value.forEach(el => el.display = flowState.display);
-     }
-   }
- );
-
-
+// 「block/inline」が変わったら、全要素の state.display も一括更新
+watch(
+  () => flowState.display,
+  (newDisp) => {
+    if (layoutSystem.value === "flow") {
+      elements.value.forEach((el) => (el.display = newDisp));
+    }
+  }
+);
+// 併せて、flowモードに切り替わったときも display を反映
+watch(
+  () => layoutSystem.value,
+  (mode) => {
+    if (mode === "flow") {
+      elements.value.forEach((el) => (el.display = flowState.display));
+    }
+  }
+);
 
 // ② interact.js ロジックを composable に移譲
 useInteract({

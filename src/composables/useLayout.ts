@@ -33,6 +33,11 @@ export const layoutCategories: LayoutCategory[] = [
 ];
 
 export function useLayout() {
+  // マルチカラム用ステート
+  const multicolState = reactive({
+    count: 3, // column-count: 何列に分割するか
+    gap: 16, // column-gap: カラム間の隙間(px)
+  });
   // レイアウト方式: flow | flex | grid | table | float | abs
   const layoutSystem = ref<string>("flow");
 
@@ -74,6 +79,11 @@ export function useLayout() {
         return {
           display: flowState.display,
           width: "100%",
+        };
+      case "multicol":
+        return {
+          columnCount: multicolState.count,
+          columnGap: `${multicolState.gap}px`,
         };
       case "flex":
         return {
@@ -118,6 +128,13 @@ export function useLayout() {
     switch (layoutSystem.value) {
       case "flow":
         return `#sandbox {\n  display: ${flowState.display};\n}`;
+      case "multicol":
+        return (
+          `/* マルチカラム */\n#sandbox {\n` +
+          `  column-count: ${multicolState.count};\n` +
+          `  column-gap: ${multicolState.gap}px;\n` +
+          `}`
+        );
       case "flex":
         return `#sandbox {\n  display: flex;\n  height: ${flexState.containerHeight}%;\n  flex-direction: ${flexState.direction};\n  justify-content: ${flexState.justifyContent};\n  align-items: ${flexState.alignItems};\n  flex-wrap: ${flexState.flexWrap};\n  gap: ${flexState.gap}px;\n}`;
       default:
@@ -128,6 +145,7 @@ export function useLayout() {
   return {
     layoutSystem,
     flowState,
+    multicolState,       // ← これを返す
     setLayoutDisplay,
     flexState,
     gridState,
