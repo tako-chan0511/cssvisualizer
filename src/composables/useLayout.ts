@@ -36,10 +36,10 @@ export function useLayout() {
   // マルチカラム用ステート
   const multicolState = reactive({
     count: 3, // column-count: 何列に分割するか
-    gap: 16, // column-gap: カラム間の隙間(px)
-    fill: "balance" as "balance" | "auto", // ← 追加
+    gap: 16,  // column-gap: カラム間の隙間(px)
+    fill: "balance" as "balance" | "auto",
   });
-  // レイアウト方式: flow | flex | grid | table | float | abs
+  // レイアウト方式
   const layoutSystem = ref<string>("flow");
 
   // 標準フロー時の display モード
@@ -66,32 +66,30 @@ export function useLayout() {
     columnGap: 10,
   });
 
-  /**
-   * 標準フロー (block/inline) の display を切り替える
-   */
-  function setLayoutDisplay(mode: "block" | "inline") {
-    flowState.display = mode;
-  }
-  // ── ③ 浮動レイアウト用ステート ──
+  // Float レイアウト用ステート
   const floatState = reactive({
     direction: "left" as "left" | "right",
     gap: 10,
   });
 
+  // 標準フロー (block/inline) 切り替え
+  function setLayoutDisplay(mode: "block" | "inline") {
+    flowState.display = mode;
+  }
+
   // サンドボックスの style 属性を計算
   const sandboxStyle = computed<CSSProperties>(() => {
     switch (layoutSystem.value) {
       case "flow":
-        return {
-          display: flowState.display,
-          width: "100%",
-        };
+        return { display: flowState.display, width: "100%" };
       case "multicol":
         return {
           columnCount: multicolState.count,
           columnGap: `${multicolState.gap}px`,
           columnFill: multicolState.fill,
         };
+      case "float":
+        return { display: flowState.display };
       case "flex":
         return {
           display: "flex",
@@ -111,19 +109,10 @@ export function useLayout() {
           rowGap: `${gridState.rowGap}px`,
           columnGap: `${gridState.columnGap}px`,
         };
-      case "float":
-        return {
-          display: flowState.display,
-        };
       case "table":
-        return {
-          display: "table",
-          width: "100%",
-        };
+        return { display: "table", width: "100%" };
       case "abs":
-        return {
-          position: "relative",
-        };
+        return { position: "relative" };
       default:
         return {};
     }
@@ -143,39 +132,41 @@ export function useLayout() {
           `}`
         );
       case "float":
-        return [
-          "/* Float レイアウト */",
-          "#sandbox > * {",
-          `  float: ${floatState.direction};`,
-          `  margin-${floatState.direction === "left" ? "right" : "left"}: ${
-            floatState.gap
-          }px;`,
-          "}",
-        ].join("\n");
-      case "flex":
-        return `#sandbox {\n  display: flex;\n  height: ${flexState.containerHeight}%;\n  flex-direction: ${flexState.direction};\n  justify-content: ${flexState.justifyContent};\n  align-items: ${flexState.alignItems};\n  flex-wrap: ${flexState.flexWrap};\n  gap: ${flexState.gap}px;\n}`;
-      case "float":
         return (
           `/* Float レイアウト */\n` +
           `#sandbox > * {\n` +
           `  float: ${floatState.direction};\n` +
-          `  margin-${floatState.direction === "left" ? "right" : "left"}: ${
-            floatState.gap
-          }px;\n` +
+          `  margin-${
+            floatState.direction === "left" ? "right" : "left"
+          }: ${floatState.gap}px;\n` +
           `}`
         );
+      case "flex":
+        return `#sandbox {\n  display: flex;\n  height: ${
+          flexState.containerHeight
+        }%;\n  flex-direction: ${flexState.direction};\n  justify-content: ${
+          flexState.justifyContent
+        };\n  align-items: ${flexState.alignItems};\n  flex-wrap: ${flexState.flexWrap};\n  gap: ${flexState.gap}px;\n}`;
+      case "grid":
+        return `#sandbox {\n  display: grid;\n  grid-template-columns: ${
+          gridState.columns
+        };\n  grid-template-rows: ${gridState.rows};\n  row-gap: ${gridState.rowGap}px;\n  column-gap: ${gridState.columnGap}px;\n}`;
+      case "table":
+        return `#sandbox {\n  display: table;\n  width: 100%;\n}\n#sandbox > * {\n  display: table-cell;\n}`;
+      case "abs":
+        return `#sandbox {\n  position: relative;\n}\n#sandbox > * {\n  position: absolute;\n}`;
       default:
-        return `#sandbox {\n  display: grid;\n  grid-template-columns: ${gridState.columns};\n  grid-template-rows: ${gridState.rows};\n  gap: ${gridState.gap}px;\n  row-gap: ${gridState.rowGap}px;\n  column-gap: ${gridState.columnGap}px;\n}`;
+        return `/* 未対応のレイアウト方式です */`;
     }
   });
 
   return {
     layoutSystem,
     flowState,
-    multicolState, // ← これを返す
+    multicolState,
     setLayoutDisplay,
     flexState,
-    floatState, // ← ここに追加
+    floatState,
     gridState,
     sandboxStyle,
     generatedLayoutCss,
