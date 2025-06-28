@@ -1,4 +1,3 @@
-<!-- src/components/VisualBox.vue -->
 <template>
   <!-- 実際のボックス -->
   <div
@@ -67,7 +66,7 @@ watch(() => props.state.y, v => (y.value = v));
 
 /** 要素スタイル */
 const elementStyle = computed((): CSSProperties => {
-  // 1) 個別編集モード以外の共通プロパティはここにまとめる
+  // 共通プロパティ
   const common: CSSProperties = {
     width: `${props.state.width}px`,
     height: `${props.state.height}px`,
@@ -75,9 +74,9 @@ const elementStyle = computed((): CSSProperties => {
     boxSizing: 'border-box',
   };
 
-  // 2) レイアウトモード時
+  // レイアウトモード時
   if (props.isLayoutMode) {
-    // 2-1) Float レイアウト
+    // Floatレイアウト
     if (props.layoutSystem === 'float') {
       return {
         ...common,
@@ -88,7 +87,7 @@ const elementStyle = computed((): CSSProperties => {
           : `0 0 0 ${props.floatState.gap}px`,
       };
     }
-    // 2-2) Table レイアウト
+    // テーブルレイアウト
     if (props.layoutSystem === 'table') {
       return {
         ...common,
@@ -97,7 +96,18 @@ const elementStyle = computed((): CSSProperties => {
         textAlign: 'center',
       };
     }
-    // 2-3) それ以外（flex/grid/multicol/flow/abs）は flex 中央揃え
+    // 絶対配置系 (abs)
+    if (props.layoutSystem === 'abs') {
+      return {
+        ...common,
+        position: 'absolute',
+        left:    `${props.state.x}px`,
+        top:     `${props.state.y}px`,
+        transform: `rotate(${props.state.angle}deg)`,
+        zIndex:  props.state.zIndex,
+      };
+    }
+    // その他 (flex/grid/multicol/flow)
     return {
       ...common,
       display: 'flex',
@@ -106,7 +116,7 @@ const elementStyle = computed((): CSSProperties => {
     };
   }
 
-  // 3) 個別編集モード
+  // 個別編集モード
   return {
     ...common,
     display: 'flex',

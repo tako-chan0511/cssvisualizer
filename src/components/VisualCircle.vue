@@ -10,20 +10,26 @@
     {{ props.state.content }}
     <div v-if="props.isSelected && !props.isLayoutMode" class="rotate-handle"></div>
   </div>
+
   <div v-if="props.isSelected && !props.isLayoutMode" class="controls">
-    <label>幅: {{ width }}px
+    <label>
+      幅: {{ width }}px
       <input type="range" v-model.number="width" min="50" max="600" />
     </label>
-    <label>高さ: {{ height }}px
+    <label>
+      高さ: {{ height }}px
       <input type="range" v-model.number="height" min="50" max="600" />
     </label>
-    <label>背景色:
+    <label>
+      背景色:
       <input type="color" v-model="bgColor" />
     </label>
-    <label>X: {{ x }}px
+    <label>
+      X: {{ x }}px
       <input type="range" v-model.number="x" :min="-300" :max="300" />
     </label>
-    <label>Y: {{ y }}px
+    <label>
+      Y: {{ y }}px
       <input type="range" v-model.number="y" :min="-300" :max="300" />
     </label>
   </div>
@@ -50,71 +56,83 @@ const x       = ref(props.state.x);
 const y       = ref(props.state.y);
 
 // コントローラ→state
-watch([width, height, bgColor, x, y], ([w,h,bg,xx,yy]) => {
-  props.state.width  = w;
-  props.state.height = h;
+watch([width, height, bgColor, x, y], ([w, h, bg, xx, yy]) => {
+  props.state.width           = w;
+  props.state.height          = h;
   props.state.backgroundColor = bg;
-  props.state.x = xx;
-  props.state.y = yy;
-});
-
-/** 要素スタイル */
-const elementStyle = computed((): CSSProperties => {
-  const common: CSSProperties = {
-    width: `${props.state.width}px`,
-    height: `${props.state.height}px`,
-    backgroundColor: props.state.backgroundColor,
-    borderRadius: '50%',
-    boxSizing: 'border-box',
-  };
-
-  if (props.isLayoutMode) {
-    // Float
-    if (props.layoutSystem === 'float') {
-      return {
-        ...common,
-        display: 'block',
-        float: props.floatState.direction,
-        margin: props.floatState.direction === 'left'
-          ? `0 ${props.floatState.gap}px 0 0`
-          : `0 0 0 ${props.floatState.gap}px`,
-      };
-    }
-    // Table
-    if (props.layoutSystem === 'table') {
-      return {
-        ...common,
-        display: 'table-cell',
-        verticalAlign: 'middle',
-        textAlign: 'center',
-      };
-    }
-    // その他
-    return {
-      ...common,
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-    };
-  }
-
-  // 個別編集モード
-  return {
-    ...common,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'absolute',
-    left: '0px',
-    top: '0px',
-    zIndex: props.state.zIndex,
-    transform: `translate(${props.state.x}px, ${props.state.y}px) rotate(${props.state.angle}deg)`,
-  };
+  props.state.x               = xx;
+  props.state.y               = yy;
 });
 
 function onSelect() {
   if (!props.isLayoutMode) emit('select', props.state.id);
 }
+
+const elementStyle = computed((): CSSProperties => {
+  // 1) ベースとなるスタイル
+  const common: CSSProperties = {
+    width:           `${props.state.width}px`,
+    height:          `${props.state.height}px`,
+    backgroundColor: props.state.backgroundColor,
+    borderRadius:    '50%',
+    boxSizing:       'border-box',
+    color:           props.state.fontColor,
+    fontSize:        `${props.state.fontSize}px`,
+    fontFamily:      props.state.fontFamily,
+    fontWeight:      props.state.fontWeight,
+    fontStyle:       props.state.fontStyle,
+    textAlign:       'center',
+    display:         'flex',         // 文字中央揃え用
+    justifyContent:  'center',
+    alignItems:      'center',
+  };
+
+  // 2) レイアウトモード時の振り分け
+  if (props.isLayoutMode) {
+    // 2-1) Float
+    if (props.layoutSystem === 'float') {
+      return {
+        ...common,
+        display: 'block',
+        float:   props.floatState.direction,
+        margin:  props.floatState.direction === 'left'
+          ? `0 ${props.floatState.gap}px 0 0`
+          : `0 0 0 ${props.floatState.gap}px`,
+      };
+    }
+    // 2-2) Table
+    if (props.layoutSystem === 'table') {
+      return {
+        ...common,
+        display:       'table-cell',
+        verticalAlign: 'middle',
+      };
+    }
+    // 2-3) Abs (絶対配置)
+    if (props.layoutSystem === 'abs') {
+      return {
+        ...common,
+        position:  'absolute',
+        left:      '0px',
+        top:       '0px',
+        transform: `translate(${props.state.x}px, ${props.state.y}px) rotate(${props.state.angle}deg)`,
+        zIndex:    props.state.zIndex,
+      };
+    }
+    // 2-4) その他（flex/multicol/flow）
+    return common;
+  }
+
+  // 3) 個別編集モード（常に絶対配置）
+  return {
+    ...common,
+    position:  'absolute',
+    left:      '0px',
+    top:       '0px',
+    transform: `translate(${props.state.x}px, ${props.state.y}px) rotate(${props.state.angle}deg)`,
+    zIndex:    props.state.zIndex,
+  };
+});
 </script>
 
 <style scoped>
@@ -129,7 +147,6 @@ function onSelect() {
   box-shadow: 0 0 20px rgba(255, 193, 7, 0.8);
 }
 .visual-element.circle {
-  /* 円の輪郭は elementStyle の背景色で設定 */
   border: 3px solid #000;
 }
 .rotate-handle {
