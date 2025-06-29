@@ -21,7 +21,7 @@
         id="sandbox"
         ref="sandboxRef"
         @click.self="deselectAll"
-        :style="sandboxStyle"
+        :style="editMode === 'individual' ? computedSandboxStyle : sandboxStyle"
       >
         <!-- 各要素を描画 -->
         <component
@@ -42,6 +42,15 @@
         <!-- レイアウトモード用ポップアップ -->
         <div v-if="editMode === 'layout'" class="controls layout-popup">
           <h3>Container</h3>
+          <!-- グリッド表示設定 -->
+          <label>
+            <input type="checkbox" v-model="gridEnabled" /> グリッド表示
+          </label>
+          <label v-if="gridEnabled">
+            グリッド間隔: {{ gridSize }}px
+            <input type="range" v-model.number="gridSize" min="5" max="100" />
+          </label>
+
           <!-- App.vue のレイアウトモード用ポップアップ内 -->
           <label>
             レイアウト方式:
@@ -324,6 +333,10 @@ import VisualText from "./components/VisualText.vue";
 import VisualImage from "./components/VisualImage.vue";
 import VisualButton from "./components/VisualButton.vue";
 
+// グリッド表示用 refs
+const gridEnabled = ref(true);
+const gridSize = ref(20);
+
 const componentMap = {
   box: VisualBox,
   circle: VisualCircle,
@@ -360,6 +373,20 @@ const {
   generatedLayoutCss,
   layoutCategories,
 } = useLayout();
+
+const computedSandboxStyle = computed(() => {
+  const style = { ...sandboxStyle } as any;
+  if (gridEnabled.value) {
+    style.backgroundImage = `
+      linear-gradient(to right, #eef2f5 1px, transparent 1px),
+      linear-gradient(to bottom, #eef2f5 1px, transparent 1px)`;
+    style.backgroundSize = `${gridSize.value}px ${gridSize.value}px`;
+  } else {
+    style.backgroundImage = "none";
+  }
+  return style;
+});
+
 // flowState.display を Ref として取り出す
 const { display: flowDisplay } = toRefs(flowState);
 
