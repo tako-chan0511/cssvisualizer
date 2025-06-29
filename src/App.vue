@@ -16,12 +16,25 @@
       </div>
       <!-- ▲ ツールバー ▲ -->
 
+       <!-- ▼ 個別編集モード用グリッドコントロール ▼ -->
+      <div v-if="editMode==='individual'" class="grid-controls">
+        <label>
+          <input type="checkbox" v-model="gridEnabled" />
+          ガイドグリッド表示
+        </label>
+        <label v-if="gridEnabled">
+          間隔: {{ gridSize }}px
+          <input type="range" v-model.number="gridSize" min="5" max="100" />
+        </label>
+      </div>
+      <!-- ▲ 個別編集モード用グリッドコントロール ▲ -->
+
       <!-- ▼ サンドボックス本体 ▼ -->
       <div
         id="sandbox"
         ref="sandboxRef"
         @click.self="deselectAll"
-        :style="editMode === 'individual' ? computedSandboxStyle : sandboxStyle"
+        :style="computedSandboxStyle"
       >
         <!-- 各要素を描画 -->
         <component
@@ -337,6 +350,8 @@ import VisualButton from "./components/VisualButton.vue";
 const gridEnabled = ref(true);
 const gridSize = ref(20);
 
+
+
 const componentMap = {
   box: VisualBox,
   circle: VisualCircle,
@@ -375,17 +390,23 @@ const {
 } = useLayout();
 
 const computedSandboxStyle = computed(() => {
-  const style = { ...sandboxStyle } as any;
+  // まず Layout 用スタイルを取り込む
+  const style = { ...sandboxStyle.value } as Record<string, any>
+
+  // ガイドグリッドを上乗せ
   if (gridEnabled.value) {
     style.backgroundImage = `
       linear-gradient(to right, #eef2f5 1px, transparent 1px),
-      linear-gradient(to bottom, #eef2f5 1px, transparent 1px)`;
-    style.backgroundSize = `${gridSize.value}px ${gridSize.value}px`;
+      linear-gradient(to bottom, #eef2f5 1px, transparent 1px)
+    `
+    style.backgroundSize = `${gridSize.value}px ${gridSize.value}px`
   } else {
-    style.backgroundImage = "none";
+    style.backgroundImage = 'none'
   }
-  return style;
-});
+
+  return style
+})
+
 
 // flowState.display を Ref として取り出す
 const { display: flowDisplay } = toRefs(flowState);
@@ -434,6 +455,9 @@ useInteract({
   selectElement,
   handleElementUpdate,
   cloneElement,
+  // ↓ここに追加
+  gridEnabled,
+  gridSize,
 });
 
 const setEditMode = (mode: "individual" | "layout") => {
@@ -716,5 +740,13 @@ body {
 }
 #sandbox > * {
   break-inside: avoid;
+}
+.grid-controls {
+  margin: 10px 0;
+  font-size: 14px;
+}
+.grid-controls label {
+  display: inline-block;
+  margin-right: 12px;
 }
 </style>

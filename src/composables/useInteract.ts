@@ -9,6 +9,9 @@ interface UseInteractParams {
   selectElement: (id: string | null) => void
   handleElementUpdate: (newState: ElementState) => void
   cloneElement: (originalState: ElementState) => void
+  /** ガイドグリッドの表示・スナップ制御 */
+  gridEnabled?: Ref<boolean>
+  gridSize?:    Ref<number>
 }
 
 /**
@@ -20,6 +23,8 @@ export function useInteract({
   selectElement,
   handleElementUpdate,
   cloneElement,
+  gridEnabled,
+  gridSize,
 }: UseInteractParams) {
   const initializeInteract = () => {
     interact('.visual-element').unset()
@@ -51,6 +56,15 @@ export function useInteract({
               })
             }
           },
+          end(event) {
+            const el = elements.value.find(e => e.id === event.target.id)
+            if (el && gridEnabled?.value) {
+              const g = gridSize!.value
+              const snappedX = Math.round(el.x / g) * g
+              const snappedY = Math.round(el.y / g) * g
+              handleElementUpdate({ ...el, x: snappedX, y: snappedY })
+            }
+          },
         },
         modifiers: [
           interact.modifiers.restrictRect({ restriction: 'parent' }),
@@ -63,15 +77,24 @@ export function useInteract({
             const el = elements.value.find(e => e.id === event.target.id)
             if (el) {
               const updates: Partial<ElementState> = {
-                width: event.rect.width,
+                width:  event.rect.width,
                 height: event.rect.height,
-                x: el.x + event.deltaRect.left,
-                y: el.y + event.deltaRect.top,
+                x:      el.x + event.deltaRect.left,
+                y:      el.y + event.deltaRect.top,
               }
               if (el.type === 'circle') {
                 updates.height = event.rect.width
               }
               handleElementUpdate({ ...el, ...updates })
+            }
+          },
+          end(event) {
+            const el = elements.value.find(e => e.id === event.target.id)
+            if (el && gridEnabled?.value) {
+              const g = gridSize!.value
+              const snappedW = Math.round(el.width / g) * g
+              const snappedH = Math.round(el.height / g) * g
+              handleElementUpdate({ ...el, width: snappedW, height: snappedH })
             }
           },
         },
