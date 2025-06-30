@@ -16,8 +16,8 @@
       </div>
       <!-- ▲ ツールバー ▲ -->
 
-       <!-- ▼ 個別編集モード用グリッドコントロール ▼ -->
-      <div v-if="editMode==='individual'" class="grid-controls">
+      <!-- ▼ 個別編集モード用グリッドコントロール ▼ -->
+      <div v-if="editMode === 'individual'" class="grid-controls">
         <label>
           <input type="checkbox" v-model="gridEnabled" />
           ガイドグリッド表示
@@ -297,6 +297,17 @@
               :value="generatedIndividualCss"
               @input="updateElementFromCss"
             ></textarea>
+            <!-- ここからプロパティ解説パネル -->
+            <div v-if="docs.length" class="doc-panel">
+              <h3>プロパティ解説</h3>
+              <ul>
+                <li v-for="doc in docs" :key="doc.label">
+                  <strong>{{ doc.label }}</strong> — {{ doc.description }}
+                  <a :href="doc.mdn" target="_blank" rel="noopener">MDN</a>
+                </li>
+              </ul>
+            </div>
+            <!-- ここまで -->
           </template>
 
           <!-- レイアウトモードの中身 -->
@@ -325,6 +336,7 @@
 <script setup lang="ts">
 import { toRefs } from "vue";
 import { useCssGenerator } from "./composables/useCssGenerator";
+import { useCssDocs } from "@/composables/useCssDocs";
 import {
   ref,
   computed,
@@ -349,8 +361,6 @@ import VisualButton from "./components/VisualButton.vue";
 // グリッド表示用 refs
 const gridEnabled = ref(true);
 const gridSize = ref(20);
-
-
 
 const componentMap = {
   box: VisualBox,
@@ -391,22 +401,21 @@ const {
 
 const computedSandboxStyle = computed(() => {
   // まず Layout 用スタイルを取り込む
-  const style = { ...sandboxStyle.value } as Record<string, any>
+  const style = { ...sandboxStyle.value } as Record<string, any>;
 
   // ガイドグリッドを上乗せ
   if (gridEnabled.value) {
     style.backgroundImage = `
       linear-gradient(to right, #eef2f5 1px, transparent 1px),
       linear-gradient(to bottom, #eef2f5 1px, transparent 1px)
-    `
-    style.backgroundSize = `${gridSize.value}px ${gridSize.value}px`
+    `;
+    style.backgroundSize = `${gridSize.value}px ${gridSize.value}px`;
   } else {
-    style.backgroundImage = 'none'
+    style.backgroundImage = "none";
   }
 
-  return style
-})
-
+  return style;
+});
 
 // flowState.display を Ref として取り出す
 const { display: flowDisplay } = toRefs(flowState);
@@ -428,6 +437,9 @@ const {
   toRefs(flowState).display,
   floatState
 );
+
+// ──────── ⑤ プロパティヒント用Docs取得 ────────
+const { docs } = useCssDocs(cssSelectedElement, generatedIndividualCss);
 
 // 「block/inline」が変わったら、全要素の state.display も一括更新
 watch(
@@ -748,5 +760,37 @@ body {
 .grid-controls label {
   display: inline-block;
   margin-right: 12px;
+}
+/* プロパティ解説パネル用スタイル */
+.doc-panel {
+  margin-top: 16px;
+  padding: 12px;
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  color: #333;       /* ← ここでテキストをダークに */
+  max-height: 50px;   /* 好きな高さに調整してください */
+  overflow-y: auto;    /* 縦方向にスクロールバーを表示 */
+}
+.doc-panel h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: #333;
+}
+.doc-panel ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.doc-panel li {
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #333;
+}
+.doc-panel a {
+  margin-left: 6px;
+  font-size: 12px;
+  color: #0064e1;
+  text-decoration: underline;
 }
 </style>
