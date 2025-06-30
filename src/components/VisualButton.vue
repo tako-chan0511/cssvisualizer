@@ -165,7 +165,9 @@ const elementStyle = computed((): CSSProperties => {
   if (layoutSystem.value === "float") {
     return {
       ...base,
-      display: "block",
+      display:        'flex',                   // ← flex container
+      justifyContent: 'center',                 // ← 水平方向中央
+      alignItems:     'center',                 // ← 垂直方向中央
       float:   floatState.value.direction,
       margin:  floatState.value.direction === "left"
         ? `0 ${floatState.value.gap}px 0 0`

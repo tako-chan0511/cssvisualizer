@@ -80,7 +80,9 @@ const elementStyle = computed((): CSSProperties => {
     if (props.layoutSystem === 'float') {
       return {
         ...common,
-        display: 'block',
+        display:        'flex',                   // ← flex container
+        justifyContent: 'center',                 // ← 水平方向中央
+        alignItems:     'center',                 // ← 垂直方向中央
         float: props.floatState.direction,
         margin: props.floatState.direction === 'left'
           ? `0 ${props.floatState.gap}px 0 0`
