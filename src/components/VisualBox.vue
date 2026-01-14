@@ -1,196 +1,172 @@
-<!-- src/components/VisualButton.vue -->
 <template>
-  <!-- 実際のボタン -->
+  <!-- 実際のボックス -->
   <div
     :id="props.state.id"
-    class="visual-element button"
+    class="visual-element box"
     :class="{ selected: props.isSelected }"
     :style="elementStyle"
+    @mousedown.stop.prevent="onSelect"
   >
     {{ props.state.content }}
-    <div
-      v-if="props.isSelected && !props.isLayoutMode"
-      class="rotate-handle"
-    ></div>
+    <div v-if="props.isSelected && !props.isLayoutMode" class="rotate-handle"></div>
   </div>
 
   <!-- コントロールパネル -->
   <div v-if="props.isSelected && !props.isLayoutMode" class="controls">
-    <label>
-      テキスト:
-      <input type="text" v-model="props.state.content" />
-    </label>
-    <label>
-      フォントサイズ: {{ fontSize }}px
-      <input type="range" v-model.number="fontSize" min="10" max="72" />
-    </label>
-
-    <label>
-      フォント:
-      <select v-model="fontFamily">
-        <option value="sans-serif">sans-serif</option>
-        <option value="serif">serif</option>
-        <option value="monospace">monospace</option>
-        <option value="cursive">cursive</option>
-      </select>
-    </label>
-
-    <label>
-      太さ:
-      <select v-model="fontWeight">
-        <option value="normal">normal</option>
-        <option value="bold">bold</option>
-        <option value="bolder">bolder</option>
-        <option value="lighter">lighter</option>
-      </select>
-    </label>
-
-    <label>
-      スタイル:
-      <select v-model="fontStyle">
-        <option value="normal">normal</option>
-        <option value="italic">italic</option>
-        <option value="oblique">oblique</option>
-      </select>
-    </label>
-
-    <label>
-      文字色:
-      <input type="color" v-model="fontColor" />
-    </label>
-    <label>
-      背景色:
-      <input type="color" v-model="bgColor" />
-    </label>
-    <label>
-      幅: {{ width }}px
+    <label>幅: {{ width }}px
       <input type="range" v-model.number="width" min="50" max="600" />
     </label>
-    <label>
-      高さ: {{ height }}px
-      <input type="range" v-model.number="height" min="30" max="200" />
+    <label>高さ: {{ height }}px
+      <input type="range" v-model.number="height" min="50" max="600" />
     </label>
-    <label>
-      X: {{ x }}px
+    <label>背景色:
+      <input type="color" v-model="bgColor" />
+    </label>
+    <label>X: {{ x }}px
       <input type="range" v-model.number="x" :min="-300" :max="300" />
     </label>
-    <label>
-      Y: {{ y }}px
+    <label>Y: {{ y }}px
       <input type="range" v-model.number="y" :min="-300" :max="300" />
     </label>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, type CSSProperties } from "vue";
-import type { ElementState } from "../types";
+import { ref, watch, computed, type CSSProperties } from 'vue';
+import type { ElementState } from '../types';
 
 const props = defineProps<{
   state: ElementState;
   isSelected: boolean;
   isLayoutMode: boolean;
+  layoutSystem: string;
+  floatState: { direction: 'left' | 'right'; gap: number };
 }>();
+const emit = defineEmits<{ (e: 'select', id: string): void }>();
 
-// 双方向バインド用ローカル refs
-const width = ref(props.state.width);
-const height = ref(props.state.height);
-const bgColor = ref(props.state.backgroundColor || "#007acc");
-const fontSize = ref(props.state.fontSize ?? 16);
-const fontColor = ref(props.state.fontColor ?? "#000000");
-const x = ref(props.state.x);
-const y = ref(props.state.y);
+// 双方向バインド用
+const width   = ref(props.state.width);
+const height  = ref(props.state.height);
+const bgColor = ref(props.state.backgroundColor || '#6dd5ed');
+const x       = ref(props.state.x);
+const y       = ref(props.state.y);
 
-const fontFamily = ref(props.state.fontFamily ?? 'sans-serif')
-const fontWeight = ref(props.state.fontWeight ?? 'normal')
-const fontStyle  = ref(props.state.fontStyle  ?? 'normal')
+// コントローラ→state
+watch(width,   v => props.state.width = v);
+watch(height,  v => props.state.height = v);
+watch(bgColor, v => props.state.backgroundColor = v);
+watch(x,       v => props.state.x = v);
+watch(y,       v => props.state.y = v);
+// state→コントローラ
+watch(() => props.state.width,  v => (width.value = v));
+watch(() => props.state.height, v => (height.value = v));
+watch(() => props.state.backgroundColor, v => (bgColor.value = v || '#6dd5ed'));
+watch(() => props.state.x, v => (x.value = v));
+watch(() => props.state.y, v => (y.value = v));
 
-// state に反映
-watch(fontFamily, v => props.state.fontFamily = v)
-watch(fontWeight, v => props.state.fontWeight = v)
-watch(fontStyle,  v => props.state.fontStyle  = v)
-
-// コントロールの変化を state に反映
-watch(width, (v) => (props.state.width = v));
-watch(height, (v) => (props.state.height = v));
-watch(bgColor, (v) => (props.state.backgroundColor = v));
-watch(fontSize, (v) => (props.state.fontSize = v));
-watch(fontColor, (v) => (props.state.fontColor = v));
-watch(x, (v) => (props.state.x = v));
-watch(y, (v) => (props.state.y = v));
-
-// state 側の変更をコントロールに反映
-watch(
-  () => props.state.width,
-  (v) => (width.value = v)
-);
-watch(
-  () => props.state.height,
-  (v) => (height.value = v)
-);
-watch(
-  () => props.state.backgroundColor,
-  (v) => (bgColor.value = v || "#007acc")
-);
-watch(
-  () => props.state.fontSize,
-  (v) => (fontSize.value = v)
-);
-watch(
-  () => props.state.fontColor,
-  (v) => (fontColor.value = v)
-);
-watch(
-  () => props.state.x,
-  (v) => (x.value = v)
-);
-watch(
-  () => props.state.y,
-  (v) => (y.value = v)
-);
-
-
-
-// スタイル
+/** 要素スタイル */
 const elementStyle = computed((): CSSProperties => {
-  const base: CSSProperties = {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    color: props.state.fontColor,
-    fontSize: `${props.state.fontSize}px`,
-    fontFamily: props.state.fontFamily, // ← 追加
-    fontWeight: props.state.fontWeight,
-    fontStyle:  props.state.fontStyle,
-    backgroundColor: props.state.backgroundColor,
+  // 共通プロパティ
+  const common: CSSProperties = {
     width: `${props.state.width}px`,
     height: `${props.state.height}px`,
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-    userSelect: "none",
-    boxSizing: "border-box",
+    backgroundColor: props.state.backgroundColor,
+    boxSizing: 'border-box',
   };
+
+  // レイアウトモード時
   if (props.isLayoutMode) {
-    return base;
+    // Floatレイアウト
+    if (props.layoutSystem === 'float') {
+      return {
+        ...common,
+        display:        'flex',                   // ← flex container
+        justifyContent: 'center',                 // ← 水平方向中央
+        alignItems:     'center',                 // ← 垂直方向中央
+        float: props.floatState.direction,
+        margin: props.floatState.direction === 'left'
+          ? `0 ${props.floatState.gap}px 0 0`
+          : `0 0 0 ${props.floatState.gap}px`,
+      };
+    }
+    // テーブルレイアウト
+    if (props.layoutSystem === 'table') {
+      return {
+        ...common,
+        display: 'table-cell',
+        verticalAlign: 'middle',
+        textAlign: 'center',
+      };
+    }
+    // 絶対配置系 (abs)
+    if (props.layoutSystem === 'abs') {
+      return {
+        ...common,
+        position: 'absolute',
+        left:    `${props.state.x}px`,
+        top:     `${props.state.y}px`,
+        transform: `rotate(${props.state.angle}deg)`,
+        zIndex:  props.state.zIndex,
+      };
+    }
+    // その他 (flex/grid/multicol/flow)
+    return {
+      ...common,
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+    };
   }
+
+  // 個別編集モード
   return {
-    ...base,
-    position: "absolute",
-    left: "0px",
-    top: "0px",
-    transform: `translate(${props.state.x}px, ${props.state.y}px) rotate(${props.state.angle}deg)`,
+    ...common,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    left: '0px',
+    top: '0px',
     zIndex: props.state.zIndex,
+    transform: `translate(${props.state.x}px, ${props.state.y}px) rotate(${props.state.angle}deg)`,
   };
 });
+
+// 選択ハンドラ
+function onSelect() {
+  if (!props.isLayoutMode) emit('select', props.state.id);
+}
 </script>
 
 <style scoped>
-.visual-element.button {
+.visual-element {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5em;
+  font-weight: bold;
+  cursor: grab;
+  touch-action: none;
+  border: 3px solid transparent;
   transition: all 0.2s;
+  flex-shrink: 0;
+}
+.visual-element:active {
+  cursor: grabbing;
 }
 .visual-element.selected {
-  outline: 2px solid #ffc107;
+  border-color: #ffc107;
+  box-shadow: 0 0 20px rgba(255, 193, 7, 0.8);
+  z-index: 100 !important;
 }
+
+/* ボックス固有のスタイル */
+.box {
+  color: white;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
 .rotate-handle {
   position: absolute;
   width: 20px;
@@ -202,6 +178,8 @@ const elementStyle = computed((): CSSProperties => {
   right: -12px;
   cursor: alias;
 }
+
+/* コントロールパネル */
 .controls {
   position: fixed;
   top: 16px;
@@ -222,9 +200,11 @@ const elementStyle = computed((): CSSProperties => {
   width: 120px;
   vertical-align: middle;
 }
-.controls input[type="color"],
-.controls input[type="text"] {
-  width: 100%;
-  margin-top: 2px;
+.controls input[type="color"] {
+  width: 32px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  vertical-align: middle;
 }
 </style>

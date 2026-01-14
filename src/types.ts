@@ -2,6 +2,8 @@
 
 // 操作対象となる要素（ボックス、円など）の状態を定義する共通の型
 export interface ElementState {
+  /** block / inline の表示モード */
+  display: 'block' | 'inline';
   id: string;
   // ★★★ 修正: 'text', 'image', 'button' を追加 ★★★
   type: 'box' | 'circle' | 'text' | 'image' | 'button';

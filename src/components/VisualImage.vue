@@ -1,18 +1,18 @@
 <template>
   <!-- 実際の画像要素 -->
   <div
-    :id="state.id"
+    :id="props.state.id"
     class="visual-element image"
-    :class="{ selected: isSelected }"
+    :class="{ selected: props.isSelected }"
     :style="elementStyle"
-    @mousedown.stop="onSelect"
+    @mousedown.stop.prevent="onSelect"
   >
-    <!-- 画像表示 --><img :src="state.src" alt="" />
-    <div v-if="isSelected && !isLayoutMode" class="rotate-handle"></div>
+    <img :src="srcValue" alt="Image" />
+    <div v-if="props.isSelected && !props.isLayoutMode" class="rotate-handle"></div>
   </div>
 
-  <!-- 選択中かつ個別編集モードのときだけ出すコントロール -->
-  <div v-if="isSelected && !isLayoutMode" class="controls">
+  <!-- 個別編集モード用コントロールパネル -->
+  <div v-if="props.isSelected && !props.isLayoutMode" class="controls">
     <label>
       画像URL:
       <input type="text" v-model="srcValue" />
@@ -37,80 +37,142 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, type CSSProperties } from 'vue';
-import type { ElementState } from '../types';
+import { ref, watch, computed, toRefs, type CSSProperties } from 'vue'
+import type { ElementState } from '../types'
 
 const props = defineProps<{
-  state: ElementState;
-  isSelected: boolean;
-  isLayoutMode: boolean;
-}>();
-const emit = defineEmits<{ (e: 'select', id: string): void }>();
+  state: ElementState
+  isSelected: boolean
+  isLayoutMode: boolean
+  layoutSystem: string
+  floatState: { direction: 'left' | 'right'; gap: number }
+}>()
+const { state, isSelected, isLayoutMode, layoutSystem, floatState } = toRefs(props)
+const emit = defineEmits<{ (e: 'select', id: string): void }>()
 
-// ローカルバインド用
-const srcValue = ref(props.state.src ?? '');
-const width      = ref(props.state.width);
-const height     = ref(props.state.height);
-const x          = ref(props.state.x);
-const y          = ref(props.state.y);
+// --- 双方向バインド用ローカル refs ---
+const srcValue = ref(state.value.src || '')
+const width    = ref(state.value.width)
+const height   = ref(state.value.height)
+const x        = ref(state.value.x)
+const y        = ref(state.value.y)
 
-// 親の state に反映
-watch(srcValue, v => props.state.src = v);
-watch(width,    v => props.state.width = v);
-watch(height,   v => props.state.height = v);
-watch(x,        v => props.state.x = v);
-watch(y,        v => props.state.y = v);
+// コントロールの変更を state に反映
+watch(srcValue, v => state.value.src    = v)
+watch(width,    v => state.value.width  = v)
+watch(height,   v => state.value.height = v)
+watch(x,        v => state.value.x      = v)
+watch(y,        v => state.value.y      = v)
 
-// 選択ハンドラ
+// --- 選択ハンドラ ---
 function onSelect() {
-  emit('select', props.state.id);
+  if (!isLayoutMode.value) {
+    emit('select', state.value.id)
+  }
 }
 
+// --- スタイル計算 ---
 const elementStyle = computed((): CSSProperties => {
-  if (props.isLayoutMode) {
-    // レイアウトモード時は画像を流し込み
+  // 編集モード or 絶対配置モード
+  if (!isLayoutMode.value || layoutSystem.value === 'abs') {
     return {
-      width: `${props.state.width}px`,
-      height: `${props.state.height}px`,
-      overflow: 'hidden'
-    };
+      display:        state.value.display === 'inline' ? 'inline-flex' : 'flex',
+      justifyContent: 'center',
+      alignItems:     'center',
+      width:          `${state.value.width}px`,
+      height:         `${state.value.height}px`,
+      overflow:       'hidden',
+      boxSizing:      'border-box',
+      position:       'absolute',
+      left:           '0px',
+      top:            '0px',
+      transform:      `translate(${state.value.x}px, ${state.value.y}px) rotate(${state.value.angle}deg)`,
+      zIndex:         state.value.zIndex,
+      border:         !isLayoutMode.value ? 'none' : '3px solid #000',
+      boxShadow:      !isLayoutMode.value ? 'none' : '0 5px 15px rgba(33,147,176,0.4)',
+    }
   }
-  // 個別編集モードでは絶対配置＋回転
+
+  // レイアウトモード：相対配置
+  if (layoutSystem.value === 'rel') {
+    return {
+      display:        state.value.display === 'inline' ? 'inline-flex' : 'flex',
+      justifyContent: 'center',
+      alignItems:     'center',
+      width:          `${state.value.width}px`,
+      height:         `${state.value.height}px`,
+      overflow:       'hidden',
+      boxSizing:      'border-box',
+      position:       'relative',
+      transform:      `translate(${state.value.x}px, ${state.value.y}px) rotate(${state.value.angle}deg)`,
+      zIndex:         state.value.zIndex,
+      border:         '3px solid #000',
+      boxShadow:      '0 5px 15px rgba(33,147,176,0.4)',
+    }
+  }
+
+  // Float レイアウト
+  if (layoutSystem.value === 'float') {
+    return {
+      display:        'flex',                   // ← flex container
+      justifyContent: 'center',                 // ← 水平方向中央
+      alignItems:     'center',                 // ← 垂直方向中央
+      float:   floatState.value.direction,
+      margin:  floatState.value.direction === 'left'
+        ? `0 ${floatState.value.gap}px 0 0`
+        : `0 0 0 ${floatState.value.gap}px`,
+      width:      `${state.value.width}px`,
+      height:     `${state.value.height}px`,
+      overflow:   'hidden',
+      boxSizing:  'border-box',
+      border:     '3px solid #000',
+      boxShadow:  '0 5px 15px rgba(33,147,176,0.4)',
+    }
+  }
+
+  // Table レイアウト
+  if (layoutSystem.value === 'table') {
+    return {
+      display:       'table-cell',
+      verticalAlign: 'middle',
+      width:         `${state.value.width}px`,
+      height:        `${state.value.height}px`,
+      overflow:      'hidden',
+      boxSizing:     'border-box',
+      border:        '3px solid #000',
+      boxShadow:     '0 5px 15px rgba(33,147,176,0.4)',
+    }
+  }
+
+  // その他（flex/grid/multicol/flow）
   return {
-    position: 'absolute',
-    left: '0px',
-    top: '0px',
-    width: `${props.state.width}px`,
-    height: `${props.state.height}px`,
-    transform: `translate(${props.state.x}px, ${props.state.y}px) rotate(${props.state.angle}deg)`,
-    zIndex: props.state.zIndex
-  };
-});
+    display:        state.value.display === 'inline' ? 'inline-flex' : 'flex',
+    justifyContent: 'center',
+    alignItems:     'center',
+    width:          `${state.value.width}px`,
+    height:         `${state.value.height}px`,
+    overflow:       'hidden',
+    boxSizing:      'border-box',
+    border:         '3px solid #000',
+    boxShadow:      '0 5px 15px rgba(33,147,176,0.4)',
+  }
+})
 </script>
 
 <style scoped>
-.visual-element.image {
-  /* 画像要素は内部に img をフルサイズ配置 */
-  overflow: hidden;
-}
 .visual-element.image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-
 .visual-element {
   cursor: grab;
   touch-action: none;
-  box-sizing: border-box;
-  border: 3px solid transparent;
   transition: all 0.2s;
   flex-shrink: 0;
 }
 .visual-element.selected {
-  border-color: #ffc107;
-  box-shadow: 0 0 20px rgba(255, 193, 7, 0.8);
-  z-index: 100 !important;
+  outline: 2px solid #ffc107;
 }
 .rotate-handle {
   position: absolute;
