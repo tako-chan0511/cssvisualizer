@@ -3,7 +3,7 @@
     <!-- 左側の操作エリア -->
     <div class="sandbox-container">
       <div class="instructions">
-        <b>操作方法:</b> 要素をクリックで選択。Alt/Option + ドラッグで複写。<br />
+        <b>★操作方法:</b> 要素をクリックで選択。Alt/Option + ドラッグで複写。<br />
         選択中の要素は角のハンドルで回転。削除ボタンで削除できます。
       </div>
       <!-- ▼ ツールバー ▼ -->
